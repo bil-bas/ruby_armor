@@ -1,4 +1,4 @@
-module RubyArmour
+module RubyArmor
   class Play < Fidgit::GuiState
     trait :timer
 

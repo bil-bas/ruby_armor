@@ -1,4 +1,4 @@
-module RubyArmour
+module RubyArmor
   class Window < Chingu::Window
     def initialize
       super 800, 600, false
