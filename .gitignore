@@ -1,3 +1,4 @@
 .idea
 rubywarrior
 Gemfile.lock
+*.gemspec
