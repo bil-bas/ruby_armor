@@ -22,19 +22,19 @@ module RubyArmor
         horizontal padding: 0, spacing: 10 do
           vertical padding: 0, width: 380, spacing: 10, height: $window.height * 0.45 do
             @readme_window = scroll_window width: 380, height: $window.height * 0.23 do
-              @readme_display = text_area width: 368, font_height: 14, editable: false
+              @readme_display = text_area width: 368, editable: false
             end
             @readme_window.background_color = @readme_display.background_color
 
             @code_window = scroll_window width: 380, height: $window.height * 0.2 do
-              @code_display = text_area width: 368, font_height: 14, editable: false
+              @code_display = text_area width: 368, editable: false
             end
             @code_window.background_color = @code_display.background_color
           end
 
           vertical padding: 0, width: 380, height: $window.height * 0.45 do
             @log_window = scroll_window width: 380, height: $window.height * 0.45 do
-              @log_display = text_area width: 368, font_height: 14, editable: false
+              @log_display = text_area width: 368, editable: false
             end
             @log_window.background_color = @log_display.background_color
           end
