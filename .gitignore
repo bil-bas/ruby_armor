@@ -2,3 +2,4 @@
 rubywarrior
 Gemfile.lock
 *.gemspec
+/pkg
