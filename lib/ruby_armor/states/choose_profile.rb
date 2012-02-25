@@ -6,22 +6,25 @@ module RubyArmor
       # Create the game.
       @game = RubyWarrior::Game.new
 
-      vertical align_h: :center do
+      vertical align_h: :center, spacing: 50 do
         label "RubyArmor", align: :center, font_height: 120, padding_top: 50
 
         button_options = { width: 400, align: :center, justify: :center }
 
         # Use existing profile.
-        @game.profiles.each do |profile|
-          title = "#{profile.warrior_name.ljust(24)} #{profile.tower.name.rjust(12)}:#{profile.level_number} #{profile.score.to_s.rjust(8)}"
-          tip = "Play as #{profile.warrior_name} - #{profile.tower.name} - level #{profile.level_number} - score #{profile.score}"
-          button title, button_options.merge(tip: tip) do
-            play profile
+        vertical padding: 0, align_h: :center do
+          @game.profiles.each do |profile|
+            title = "#{profile.warrior_name.ljust(20)} #{profile.tower.name.rjust(12)}:#{profile.level_number} #{profile.score.to_s.rjust(5)}"
+            tip = "Play as #{profile.warrior_name} - #{profile.tower.name} - level #{profile.level_number} - score #{profile.score}"
+            # Can be disabled because of a bug in RubyWarrior paths.
+            button title, button_options.merge(tip: tip, enabled: File.directory?(profile.tower_path)) do
+              play profile
+            end
           end
         end
 
         # Option to create a new profile.
-        horizontal align: :center, padding_v: 20, padding_h: 0, spacing: 10 do
+        horizontal align: :center, padding: 0 do
           @new_name = text_area width: 300, max_height: 60, font_height: 24 do |_, text|
             duplicate = @game.profiles.any? {|p| p.warrior_name.downcase == text.downcase }
             @new_profile_button.enabled = !(text.empty? or duplicate)

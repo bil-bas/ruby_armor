@@ -5,7 +5,7 @@ module RubyArmor
     TILE_WIDTH, TILE_HEIGHT = 8, 12
     SPRITE_WIDTH, SPRITE_HEIGHT = 8, 8
     SPRITE_OFFSET_X, SPRITE_OFFSET_Y = 64, 64
-    SPRITE_SCALE = 7
+    SPRITE_SCALE = 5
 
     trait :timer
 
@@ -25,13 +25,17 @@ module RubyArmor
 
       vertical spacing: 0, padding: 10 do
         horizontal padding: 0, height: $window.height * 0.5, width: 780 do
+          # Space for the game graphics.
           vertical padding: 0, height: $window.height * 0.5, align_h: :fill
+
           vertical padding: 0, height: $window.height * 0.5, width: 100 do
+            # Labels at top-right.
             @tower_label = label ""
             @level_label = label "Level:"
             @turn_label = label "Turn:"
             @health_label = label "Health:"
 
+            # Buttons underneath them.
             button_options = { :width => 70, :justify => :center, shortcut: :auto, border_thickness: 0, }
             @start_button = button "Start", button_options do
               start_level
@@ -50,8 +54,9 @@ module RubyArmor
               prepare_level
             end
 
+            # Choose turn-duration with a slider.
             horizontal padding: 0, spacing: 0 do
-              @turn_duration_label = label "", font_height: 16
+              @turn_duration_label = label "", font_height: 12
               @turn_duration_slider = slider width: 55, range: 0..1000, tip: "Turn duration (ms)" do |_, value|
                 @turn_duration = value * 0.001
                 @turn_duration_label.text = "%4dms" % value.to_s
@@ -61,6 +66,7 @@ module RubyArmor
           end
         end
 
+        # Text areas at the bottom.
         horizontal padding: 0, spacing: 10 do
           # Tabs to contain README and player code to the left.
           vertical padding: 0, spacing: 0 do
@@ -68,6 +74,18 @@ module RubyArmor
               @tab_buttons = horizontal padding: 0, spacing: 4 do
                 %w[README player.rb].each do |name|
                   radio_button(name.to_s, name, border_thickness: 0, tip: "View #{name}")
+                end
+
+                horizontal padding: 0, padding_left: 70 do
+                  # Default editor for Windows.
+                  ENV['EDITOR'] = "notepad" if Gem.win_platform? and ENV['EDITOR'].nil?
+
+                  tip = ENV['EDITOR'] ? "Edit file in #{ ENV['EDITOR']}" : "ENV['EDITOR'] not set"
+                  button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0 do
+                    command = %<"#{ENV['EDITOR']}" "#{File.join(level.player_path, @tabs_group.value)}">
+                    $stdout.puts "SYSTEM: #{command}"
+                    Thread.new { system command }
+                  end
                 end
               end
 
@@ -89,7 +107,7 @@ module RubyArmor
           end
 
           # Log on the right
-          vertical padding: 0, width: 380, height: $window.height * 0.45 do
+          vertical padding: 0, width: 380, height: 278 do
             @log_window = scroll_window width: 380, height: 278 do
               @log_display = text_area width: 368, editable: false
             end
@@ -252,7 +270,7 @@ module RubyArmor
     end
 
     def print(message)
-      $stdout.puts message
+      #$stdout.puts message
       @log_display.text += message
       @log_window.offset_y = Float::INFINITY
     end

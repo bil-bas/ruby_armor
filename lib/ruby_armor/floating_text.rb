@@ -1,13 +1,13 @@
 module RubyArmor
   class FloatingText < GameObject
-    FONT_SIZE = 30
+    FONT_SIZE = 20
 
     def initialize(text, options = {})
       super(options)
 
       @final_y = y - 60
       @text = text
-      @font = Font["MONACO.TTF", FONT_SIZE]
+      @font = Font["ProggyCleanSZ.ttf", FONT_SIZE]
     end
 
     def update

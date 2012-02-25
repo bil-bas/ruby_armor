@@ -1,9 +1,9 @@
 Ruby Armor
 ==========
 
-A pretty GUI front-end for [RubyWarrior](https://github.com/ryanb/ruby-warrior).
+A graphical front-end for [RubyWarrior](https://github.com/ryanb/ruby-warrior). Make sure your Ruby Warrior is wearing Ruby Armor!
 
-* Author: Spooner / Bil Bas (bil.bagpuss@gmail.com
+* Author: Spooner / Bil Bas (bil.bagpuss@gmail.com)
 * License: MIT
 * Website: http://spooner.github.com/games/ruby_armor/
 * Project: https://github.com/Spooner/ruby_armor
@@ -28,6 +28,7 @@ Credits
 Third party assets used
 -----------------------
 
+* Font: [ProggyCleanSZ.ttf](http://proggyfonts.com)
 * Sprites made by Oryx from his [LOFI Sprite Pack](http://cgbarrett.squarespace.com/sprites/). [![CC BY-NC-ND](http://i.creativecommons.org/l/by-nc-nd/3.0/88x31.png)](http://creativecommons.org/licenses/by-nc-nd/3.0/)
 * [Gosu](http://libgosu.org/) game development library
 * [Chingu](http://ippa.se/chingu) game library (extending Gosu)

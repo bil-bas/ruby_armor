@@ -13,8 +13,8 @@
 
 :elements:
   :Element:
-    :font_name: MONACO.TTF
-    :font_height: 20
+    :font_name: ProggyCleanSZ.ttf
+    :font_height: 16
     :color: ?text
     :background_color: ?none
     :border_color: ?light_background
@@ -58,7 +58,7 @@
   :TextArea:
     :color: ?text
     :background_color: ?dark_background
-    :font_height: 16
+    :font_height: 14
     
   :ScrollBar: # < Composite
     :rail_width: 14
