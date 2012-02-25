@@ -165,22 +165,30 @@ module RubyArmor
 
       # Continually poll the player code file to see when it is edited.
       stop_timer :refresh_code
-      converted_line_endings = false
+      friendly_line_endings = false
       every(100, :name => :refresh_code) do
         begin
           player_file = File.join level.player_path, "player.rb"
           player_code = File.read player_file
-          unless @code_display.stripped_text.strip == player_code.strip
+          stripped_code = player_code.strip
+          @loaded_code ||= ""
+          unless @loaded_code == stripped_code
+            $stdout.puts "Detected change in player.rb"
+
             # Rewrite file as Windows text file if it is the default (a unix file).
-            if !converted_line_endings and Gem.win_platform? and
-                (File.open(player_file, "rb", &:read).strip == player_code.strip)
+            # If the file loaded in binary == the code loaded as text, then the file
+            # must have Unix endings (\n => same as a text file in memory) rather than
+            # Windows endings (\r\n => different than text file in memory).
+            if !friendly_line_endings and Gem.win_platform? and
+                (File.open(player_file, "rb", &:read).strip == stripped_code)
 
               File.open(player_file, "w") {|f| f.puts player_code }
               $stdout.puts "Converted to Windows line endings: #{player_file}"
             end
-            converted_line_endings = true # Either will have or don't need to.
+            friendly_line_endings = true # Either will have or don't need to.
 
-            @code_display.text = player_code
+            @code_display.text = stripped_code
+            @loaded_code = stripped_code
             prepare_level
           end
         rescue Errno::ENOENT
@@ -188,7 +196,7 @@ module RubyArmor
         end
       end
 
-      @_level = profile.current_level
+      @level = profile.current_level # Need to store this because it gets forgotten by the profile/game :(
       @turn = 0
       @playing = false
       level.load_level
@@ -256,7 +264,7 @@ module RubyArmor
     end
 
     def profile; @game.profile; end
-    def level; @_level; end
+    def level; @level; end
     def floor; level.floor; end
 
     def play_turn
@@ -303,11 +311,13 @@ module RubyArmor
       self.puts
       self.puts exception.backtrace.join("\n")
 
-      exception.message =~ /:(\d+):/
-      exception_line = $1.to_i - 1
-      code_lines = @code_display.text.split "\n"
-      code_lines[exception_line] = "<c=ff0000>#{code_lines[exception_line]}</c>"
-      @code_display.text = code_lines.join "\n"
+      # TODO: Make this work without it raising exceptions in Fidgit :(
+      #exception.message =~ /:(\d+):/
+      #exception_line = $1.to_i - 1
+      #code_lines = @code_display.text.split "\n"
+      #code_lines[exception_line] = "<c=ff0000>{code_lines[exception_line]}</c>"
+      #@code_display.text = code_lines.join "\n"
+
       @exception = exception
     end
 
