@@ -23,7 +23,6 @@ module RubyArmor
 
             button_options = { :width => 70 }
             button "Restart", button_options do
-              @log_display.text = ""
               start_game
             end
 
@@ -32,7 +31,8 @@ module RubyArmor
             end
 
             @continue_button = button "Continue", button_options do
-
+              @game.prepare_next_level
+              start_game
             end
           end
         end
@@ -63,6 +63,7 @@ module RubyArmor
     end
 
     def start_game
+      @log_display.text = ""
       @continue_button.enabled = false
       @hint_button.enabled = false
 
@@ -124,8 +125,8 @@ module RubyArmor
       @take_next_turn_at = Time.now + 0.5
 
       if level.passed?
-        @continue_button.enabled = true
         if @game.next_level.exists?
+          @continue_button.enabled = true
           self.puts "Success! You have found the stairs."
         else
           self.puts "CONGRATULATIONS! You have climbed to the top of the tower and rescued the fair maiden Ruby."
