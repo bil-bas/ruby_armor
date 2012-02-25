@@ -11,6 +11,7 @@ module RubyArmor
 
       @tiles = SpriteSheet.new "tiles.png", 8, 8, 8
       @sprites = SpriteSheet.new "characters.png", 8, 8, 4
+      @max_turns = 75 # Just to recognise a stalemate ;)
 
       vertical spacing: 0, padding: 10 do
         horizontal padding: 0, height: $window.height * 0.5, width: 780 do
@@ -31,7 +32,7 @@ module RubyArmor
             end
 
             @hint_button = button "Hint", button_options do
-
+              message level.tip
             end
 
             @continue_button = button "Continue", button_options do
@@ -167,8 +168,16 @@ module RubyArmor
         end
         level.tally_points
       elsif level.failed?
+        @hint_button.enabled = true
         self.puts "Sorry, you failed level #{level.number}. Change your script and try again."
+      elsif out_of_time?
+        @hint_button.enabled = true
+        self.puts "Sorry, you starved to death on level #{level.number}. Change your script and try again."
       end
+    end
+
+    def out_of_time?
+      @turn > @max_turns
     end
 
     def puts(message)
@@ -255,7 +264,7 @@ module RubyArmor
     def update
       super
 
-      if @playing and Time.now >= @take_next_turn_at and not (level.passed? || level.failed?)
+      if @playing and Time.now >= @take_next_turn_at and not (level.passed? || level.failed? || out_of_time?)
         play_turn
       end
     end
