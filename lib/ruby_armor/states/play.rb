@@ -7,6 +7,14 @@ module RubyArmor
     SPRITE_OFFSET_X, SPRITE_OFFSET_Y = 64, 64
     SPRITE_SCALE = 5
 
+    # Sprites to show based on player facing.
+    FACINGS = {
+        :east => 0,
+        :south => 1,
+        :west => 2,
+        :north => 3,
+    }
+
     ENEMY_TYPES = [
         RubyWarrior::Units::Wizard,
         RubyWarrior::Units::ThickSludge,
@@ -372,7 +380,7 @@ module RubyArmor
           floor.units.each do |unit|
             sprite = case unit
                        when RubyWarrior::Units::Warrior
-                         @sprites[0, 0]
+                         @sprites[FACINGS[unit.position.direction], 0]
                        when RubyWarrior::Units::Wizard
                          @sprites[0, 1]
                        when RubyWarrior::Units::ThickSludge
