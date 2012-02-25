@@ -25,7 +25,7 @@ def generate_gemspec
     s.summary     = %q{GUI interface for RubyWarrior}
 
     # TODO: Add the DLL when permission is granted.
-    s.files = Dir[*%w<lib/**/* test/**/* *.md *.txt>]
+    s.files = Dir[*%w<config/**/* lib/**/* media/**/* test/**/* *.md *.txt>]
     s.licenses = ["MIT"]
     s.rubyforge_project = s.name
 
