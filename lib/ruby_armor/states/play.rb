@@ -16,6 +16,7 @@ module RubyArmor
         horizontal padding: 0, height: $window.height * 0.5, width: 780 do
           vertical padding: 0, height: $window.height * 0.5, align_h: :fill
           vertical padding: 0, height: $window.height * 0.5, width: 100 do
+            @tower_label = label ""
             @level_label = label "Level: 0"
             @turn_label = label "Turn: 0"
             @health_label = label "Health: 0"
@@ -58,7 +59,7 @@ module RubyArmor
       profile_to_use = if @game.profiles.empty?
                          new_profile = RubyWarrior::Profile.new
                          new_profile.tower_path = @game.towers[0].path
-                         new_profile.warrior_name = "Bob"
+                         new_profile.warrior_name = "Ruby"
                          new_profile
                        else
                          @game.profiles[0]
@@ -80,7 +81,8 @@ module RubyArmor
       end
 
       print "Starting Level #{level.number}\n"
-
+      @tower_label.text = profile.tower.name
+      @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last level is called.
       @turn = 0
       @turn_label.text = "Turn: 1"
 
@@ -133,28 +135,28 @@ module RubyArmor
       super
 
       $window.translate 64, 64 do
-        $window.scale 8 do
+        $window.scale 7 do
           # Draw walls.
           floor.width.times do |x|
             light = x % 2
             light = 2 if light == 1 and (Gosu::milliseconds / 500) % 2 == 0
-            @tiles[light + 3, 0].draw x * 8, -8, 0
-            @tiles[3, 0].draw x * 8, floor.height * 8, 0
+            @tiles[light + 3, @tile_set].draw x * 8, -8, 0
+            @tiles[3, @tile_set].draw x * 8, floor.height * 8, 0
           end
           floor.height.times do |y|
-            @tiles[3, 0].draw -8, y * 8, 0
-            @tiles[3, 0].draw floor.width * 8, y * 8, 0
+            @tiles[3, @tile_set].draw -8, y * 8, 0
+            @tiles[3, @tile_set].draw floor.width * 8, y * 8, 0
           end
 
           # Draw floor
           floor.width.times do |x|
             floor.height.times do |y|
-              @tiles[(x + y + 1) % 2, 0].draw x * 8, y * 8, 0, 1, 1, FLOOR_COLOR
+              @tiles[(x + y + 1) % 2, @tile_set].draw x * 8, y * 8, 0, 1, 1, FLOOR_COLOR
             end
           end
 
           # Draw stairs
-          @tiles[2, 0].draw floor.stairs_location[0] * 8, floor.stairs_location[1] * 8, 0
+          @tiles[2, @tile_set].draw floor.stairs_location[0] * 8, floor.stairs_location[1] * 8, 0
 
           # Draw units.
           floor.units.each do |unit|
