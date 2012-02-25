@@ -44,10 +44,10 @@ module RubyArmor
 
           vertical padding: 0, height: $window.height * 0.5, width: 100 do
             # Labels at top-right.
-            @tower_label = label ""
-            @level_label = label "Level:"
-            @turn_label = label "Turn:"
-            @health_label = label "Health:"
+            @tower_label = label "", tip: "Each tower has a different difficulty level"
+            @level_label = label "Level:", tip: "Each tower contains 9 levels"
+            @turn_label = label "Turn:", tip: "Current turn; starvation at #{@max_turns} to avoid endless games"
+            @health_label = label "Health:", tip: "The warrior's remaining health; death occurs at 0"
 
             # Buttons underneath them.
             button_options = {
@@ -57,19 +57,19 @@ module RubyArmor
                 shortcut_color: Color.rgb(150, 255, 0),
                 border_thickness: 0,
             }
-            @start_button = button "Start", button_options do
+            @start_button = button "Start", button_options.merge(tip: "Start running player.rb in this level") do
               start_level
             end
 
-            @reset_button = button "Reset", button_options do
+            @reset_button = button "Reset", button_options.merge(tip: "Restart the level") do
               prepare_level
             end
 
-            @hint_button = button "Hint", button_options do
+            @hint_button = button "Hint", button_options.merge(tip: "Get hint on how best to approach the level") do
               message replace_syntax(level.tip)
             end
 
-            @continue_button = button "Continue", button_options do
+            @continue_button = button "Continue", button_options.merge(tip: "Climb up the stairs to the next level") do
               @game.prepare_next_level
               prepare_level
             end
@@ -100,7 +100,7 @@ module RubyArmor
                   # Default editor for Windows.
                   ENV['EDITOR'] = "notepad" if Gem.win_platform? and ENV['EDITOR'].nil?
 
-                  tip = ENV['EDITOR'] ? "Edit file in #{ ENV['EDITOR']}" : "ENV['EDITOR'] not set"
+                  tip = ENV['EDITOR'] ? "Edit file in #{ENV['EDITOR']} (set ENV['EDITOR'] to use a different editor)" : "ENV['EDITOR'] not set"
                   button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0 do
                     command = %<"#{ENV['EDITOR']}" "#{File.join(level.player_path, @tabs_group.value)}">
                     $stdout.puts "SYSTEM: #{command}"
