@@ -109,11 +109,18 @@ module RubyArmor
       end
 
       print "Starting Level #{level.number}\n"
-      @tower_label.text = profile.tower.name.capitalize
       @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
       @turn = 0
-      @turn_label.text = "Turn:    1"
       @playing = false
+
+      refresh_labels
+    end
+
+    def refresh_labels
+      @tower_label.text =  profile.tower.name.capitalize
+      @level_label.text =  "Level:   #{level.number}"
+      @turn_label.text =   "Turn:   #{(@turn + 1).to_s.rjust(2)}"
+      @health_label.text = "Health: #{level.warrior.health.to_s.rjust(2)}"
     end
 
     def start_level
@@ -121,6 +128,7 @@ module RubyArmor
       @start_button.enabled = false
       @playing = true
       @take_next_turn_at = Time.now + 0.5
+      refresh_labels
     end
 
     def replace_syntax(string)
@@ -144,14 +152,11 @@ module RubyArmor
       floor.units.each(&:prepare_turn)
       floor.units.each(&:perform_turn)
       @turn += 1
-
-      @level_label.text =  "Level:   #{level.number}"
-      @turn_label.text =   "Turn:   #{(@turn + 1).to_s.rjust(2)}"
-      @health_label.text = "Health: #{level.warrior.health.to_s.rjust(2)}"
-
       level.time_bonus -= 1 if level.time_bonus > 0
 
       @take_next_turn_at = Time.now + 0.5
+
+      refresh_labels
 
       if level.passed?
         if @game.next_level.exists?
