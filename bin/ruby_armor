@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# For running from the gem, so path will already be set.
+
 require "ruby_armor"
 
 RubyArmor::Window.new.show unless defined? Ocra
