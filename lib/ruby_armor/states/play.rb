@@ -32,7 +32,7 @@ module RubyArmor
             @turn_label = label "Turn:"
             @health_label = label "Health:"
 
-            button_options = { :width => 70, :justify => :center, shortcut: :auto }
+            button_options = { :width => 70, :justify => :center, shortcut: :auto, border_thickness: 0, }
             @start_button = button "Start", button_options do
               start_level
             end
@@ -62,20 +62,35 @@ module RubyArmor
         end
 
         horizontal padding: 0, spacing: 10 do
-          vertical padding: 0, width: 380, spacing: 10, height: $window.height * 0.45 do
-            @readme_window = scroll_window width: 380, height: $window.height * 0.23 do
-              @readme_display = text_area width: 368, editable: false
-            end
-            @readme_window.background_color = @readme_display.background_color
+          # Tabs to contain README and player code to the left.
+          vertical padding: 0, spacing: 0 do
+            @tabs_group = group do
+              @tab_buttons = horizontal padding: 0, spacing: 4 do
+                %w[README player.rb].each do |name|
+                  radio_button(name.to_s, name, border_thickness: 0, tip: "View #{name}")
+                end
+              end
 
-            @code_window = scroll_window width: 380, height: $window.height * 0.2 do
-              @code_display = text_area width: 368, editable: false
+              subscribe :changed do |_, value|
+                current = @tab_buttons.find {|elem| elem.value == value }
+                @tab_buttons.each {|t| t.enabled = (t != current) }
+                current.color, current.background_color = current.background_color, current.color
+
+                @tab_contents.clear
+                @tab_contents.add @tab_windows[value]
+              end
             end
-            @code_window.background_color = @code_display.background_color
+
+            # Contents of those tabs.
+            @tab_contents = vertical padding: 0, width: 380, spacing: 10, height: $window.height * 0.45
+
+            create_tab_windows
+            @tabs_group.value = "README"
           end
 
+          # Log on the right
           vertical padding: 0, width: 380, height: $window.height * 0.45 do
-            @log_window = scroll_window width: 380, height: $window.height * 0.45 do
+            @log_window = scroll_window width: 380, height: 278 do
               @log_display = text_area width: 368, editable: false
             end
             @log_window.background_color = @log_display.background_color
@@ -84,6 +99,19 @@ module RubyArmor
       end
 
       prepare_level
+    end
+
+    def create_tab_windows
+      @tab_windows = {}
+      @tab_windows["README"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
+        @readme_display = text_area width: 368, editable: false
+      end
+      @tab_windows["README"].background_color = @readme_display.background_color
+
+      @tab_windows["player.rb"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
+        @code_display = text_area width: 368, editable: false
+      end
+      @tab_windows["player.rb"].background_color = @code_display.background_color
     end
 
     def prepare_level
