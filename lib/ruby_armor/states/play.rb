@@ -89,10 +89,11 @@ module RubyArmor
     def play_turn
       self.puts "- turn #{@turn+1} -"
       self.print floor.character
+
       floor.units.each(&:prepare_turn)
       floor.units.each(&:perform_turn)
-
       @turn += 1
+
       @level_label.text = "Level: #{level.number}"
       @turn_label.text = "Turn: #{@turn+1}"
       @health_label.text = "Health: #{level.warrior.health}"
@@ -100,6 +101,17 @@ module RubyArmor
       level.time_bonus -= 1 if level.time_bonus > 0
 
       @take_next_turn_at = Time.now + 0.5
+
+      if level.passed?
+        if @game.next_level.exists?
+          self.puts "Success! You have found the stairs."
+        else
+          self.puts "CONGRATULATIONS! You have climbed to the top of the tower and rescued the fair maiden Ruby."
+        end
+        level.tally_points
+      elsif level.failed?
+        self.puts "Sorry, you failed level #{level.number}. Change your script and try again."
+      end
     end
 
     def puts(message)
