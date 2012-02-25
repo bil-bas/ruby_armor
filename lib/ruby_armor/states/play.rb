@@ -1,11 +1,16 @@
 module RubyArmor
   class Play < Fidgit::GuiState
+    FLOOR_COLOR = Color.rgba(255, 255, 255, 125)
+
     trait :timer
 
     def setup
       super
 
       RubyWarrior::UI.proxy = self
+
+      @tiles = SpriteSheet.new "tiles.png", 8, 8, 8
+      @sprites = SpriteSheet.new "characters.png", 8, 8, 4
 
       vertical spacing: 0, padding: 10 do
         horizontal padding: 0, height: $window.height * 0.5, width: 780 do
@@ -128,25 +133,55 @@ module RubyArmor
       super
 
       $window.translate 64, 64 do
-        $window.scale 48 do
+        $window.scale 8 do
           # Draw walls.
           floor.width.times do |x|
-            draw_rect x, -1, 1, 1, 0, Color.rgb(100, 100, 100)
-            draw_rect x, floor.height, 1, 1, 0, Color.rgb(100, 100, 100)
+            light = x % 2
+            light = 2 if light == 1 and (Gosu::milliseconds / 500) % 2 == 0
+            @tiles[light + 3, 0].draw x * 8, -8, 0
+            @tiles[3, 0].draw x * 8, floor.height * 8, 0
           end
           floor.height.times do |y|
-            draw_rect -1, y, 1, 1, 0, Color.rgb(100, 100, 100)
-            draw_rect floor.width, y, 1, 1, 0, Color.rgb(100, 100, 100)
+            @tiles[3, 0].draw -8, y * 8, 0
+            @tiles[3, 0].draw floor.width * 8, y * 8, 0
+          end
+
+          # Draw floor
+          floor.width.times do |x|
+            floor.height.times do |y|
+              @tiles[(x + y + 1) % 2, 0].draw x * 8, y * 8, 0, 1, 1, FLOOR_COLOR
+            end
           end
 
           # Draw stairs
-          draw_rect *floor.stairs_location, 1, 1, 0, Color.rgb(0, 200, 0)
+          @tiles[2, 0].draw floor.stairs_location[0] * 8, floor.stairs_location[1] * 8, 0
 
           # Draw units.
           floor.units.each do |unit|
-            color = unit.is_a?(RubyWarrior::Units::Warrior) ? Color.rgb(50, 50, 255) : Color.rgb(255, 0, 0)
-            draw_rect unit.position.x, unit.position.y, 1, 1, 0, color
-            #[unit.character, [unit.position.x, unit.position.y], unit.health] }
+            sprite = case unit
+                       when RubyWarrior::Units::Warrior
+                         @sprites[0, 0]
+                       when RubyWarrior::Units::Wizard
+                         @sprites[0, 1]
+                       when RubyWarrior::Units::Sludge
+                         @sprites[1, 1]
+                       when RubyWarrior::Units::ThickSludge
+                         @sprites[2, 1]
+                       when RubyWarrior::Units::Archer
+                         @sprites[3, 1]
+                       when RubyWarrior::Units::Captive
+                         @sprites[0, 2]
+                       when RubyWarrior::Units::Golem
+                         @sprites[1, 2]
+                       else
+                         raise "unknown unit: #{unit.class}"
+                     end
+
+            sprite.draw unit.position.x * 8, unit.position.y * 8, 0
+
+            if unit.bound?
+              @sprites[2, 2].draw unit.position.x * 8, unit.position.y * 8, 0
+            end
           end
         end
       end
