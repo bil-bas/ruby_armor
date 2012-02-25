@@ -22,7 +22,7 @@ module RubyArmor
             @turn_label = label "Turn:"
             @health_label = label "Health:"
 
-            button_options = { :width => 70 }
+            button_options = { :width => 70, :justify => :center }
             @start_button = button "Start", button_options do
               start_level
             end
