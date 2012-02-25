@@ -143,11 +143,23 @@ module RubyArmor
 
       @game.prepare_next_level unless profile.current_level.number > 0
 
+      # Continually poll the player code file to see when it is edited.
       stop_timer :refresh_code
+      converted_line_endings = false
       every(100, :name => :refresh_code) do
         begin
-          player_code = File.read File.join(level.player_path, "player.rb")
+          player_file = File.join level.player_path, "player.rb"
+          player_code = File.read player_file
           unless @code_display.stripped_text.strip == player_code.strip
+            # Rewrite file as Windows text file if it is the default (a unix file).
+            if !converted_line_endings and Gem.win_platform? and
+                (File.open(player_file, "rb", &:read).strip == player_code.strip)
+
+              File.open(player_file, "w") {|f| f.puts player_code }
+              $stdout.puts "Converted to Windows line endings: #{player_file}"
+            end
+            converted_line_endings = true # Either will have or don't need to.
+
             @code_display.text = player_code
             prepare_level
           end
