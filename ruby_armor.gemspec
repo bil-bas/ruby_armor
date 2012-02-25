@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = "ruby_armor"
-  s.version = "0.0.2alpha"
+  s.version = "0.0.3alpha"
 
   s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Bil Bas (Spooner)"]

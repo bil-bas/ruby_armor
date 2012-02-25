@@ -314,7 +314,7 @@ module RubyArmor
     end
 
     def print(message)
-      $stdout.puts message
+      #$stdout.puts message
       @log_display.text += replace_log message
       @log_window.offset_y = Float::INFINITY
     end
