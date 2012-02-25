@@ -13,6 +13,7 @@ module RubyArmor
           vertical padding: 0, height: $window.height * 0.5, width: 100 do
             @level_label = label "Level: 0"
             @turn_label = label "Turn: 0"
+            @health_label = label "Health: 0"
             button "restart" do
               @log_display.text = ""
               start_game
@@ -91,11 +92,10 @@ module RubyArmor
       floor.units.each(&:prepare_turn)
       floor.units.each(&:perform_turn)
 
-      #floor.units.each {|unit| p [unit.character, [unit.position.x, unit.position.y], unit.health] }
-
       @turn += 1
       @level_label.text = "Level: #{level.number}"
       @turn_label.text = "Turn: #{@turn+1}"
+      @health_label.text = "Health: #{level.warrior.health}"
 
       level.time_bonus -= 1 if level.time_bonus > 0
 
@@ -110,6 +110,34 @@ module RubyArmor
       $stdout.puts message
       @log_display.text += message
       @log_window.offset_y = Float::INFINITY
+    end
+
+    def draw
+      super
+
+      $window.translate 64, 64 do
+        $window.scale 48 do
+          # Draw walls.
+          floor.width.times do |x|
+            draw_rect x, -1, 1, 1, 0, Color.rgb(100, 100, 100)
+            draw_rect x, floor.height, 1, 1, 0, Color.rgb(100, 100, 100)
+          end
+          floor.height.times do |y|
+            draw_rect -1, y, 1, 1, 0, Color.rgb(100, 100, 100)
+            draw_rect floor.width, y, 1, 1, 0, Color.rgb(100, 100, 100)
+          end
+
+          # Draw stairs
+          draw_rect *floor.stairs_location, 1, 1, 0, Color.rgb(0, 200, 0)
+
+          # Draw units.
+          floor.units.each do |unit|
+            color = unit.is_a?(RubyWarrior::Units::Warrior) ? Color.rgb(50, 50, 255) : Color.rgb(255, 0, 0)
+            draw_rect unit.position.x, unit.position.y, 1, 1, 0, color
+            #[unit.character, [unit.position.x, unit.position.y], unit.health] }
+          end
+        end
+      end
     end
 
     def update
