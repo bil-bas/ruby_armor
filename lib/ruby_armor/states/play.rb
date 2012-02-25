@@ -89,7 +89,7 @@ module RubyArmor
       level.load_player
       level.load_level
 
-      @readme_display.text = File.read File.join(level.player_path, "README")
+      @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
       every(100) do
         player_code = File.read File.join(level.player_path, "player.rb")
         @code_display.text = player_code unless @code_display.text == player_code
@@ -97,11 +97,21 @@ module RubyArmor
 
       print "Starting Level #{level.number}\n"
       @tower_label.text = profile.tower.name.capitalize
-      @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last level is called.
+      @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
       @turn = 0
       @turn_label.text = "Turn:    1"
 
       @take_next_turn_at = Time.now + 0.5
+    end
+
+    def replace_syntax(string)
+      string.gsub(/warrior\.[a-z]+./) do |s|
+        if s[-1, 1] == '!'
+          "<c=ff0000>#{s}</c>" # Commands.
+        else
+          "<c=00ff00>#{s}</c>" # Queries.
+        end
+      end
     end
 
     def profile; @game.profile; end
