@@ -33,5 +33,3 @@ Font.autoload_dirs.unshift File.join(media_dir, 'fonts')
 
 Fidgit::Element.schema.merge_schema! YAML.load(File.read(File.expand_path('config/gui/schema.yml', ROOT_PATH)))
 
-RubyArmor::Window.new.show
-

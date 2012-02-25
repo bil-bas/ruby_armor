@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-GEMSPEC_FILE =
 task :gemspec do
   generate_gemspec
 end
@@ -25,7 +24,7 @@ def generate_gemspec
     s.summary     = %q{GUI interface for RubyWarrior}
 
     # TODO: Add the DLL when permission is granted.
-    s.files = Dir[*%w<config/**/* lib/**/* media/**/* test/**/* *.md *.txt>]
+    s.files = DISTRO_FILES
     s.licenses = ["MIT"]
     s.rubyforge_project = s.name
 
@@ -37,6 +36,8 @@ def generate_gemspec
     s.add_runtime_dependency "gosu", "~> 0.7.41"
     s.add_runtime_dependency "chingu", "~> 0.9rc7"
     s.add_runtime_dependency "fidgit", "~> 0.2.1"
+
+    s.add_development_dependency "releasy", "~> 0.2.2"
   end
 
   File.open("#{spec.name}.gemspec", "w") do |file|
