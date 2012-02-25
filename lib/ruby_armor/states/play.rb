@@ -318,6 +318,8 @@ module RubyArmor
       #code_lines[exception_line] = "<c=ff0000>{code_lines[exception_line]}</c>"
       #@code_display.text = code_lines.join "\n"
 
+      @start_button.enabled = false
+
       @exception = exception
     end
 
