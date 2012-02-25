@@ -93,18 +93,15 @@ module RubyArmor
       @reset_button.enabled = false
       @start_button.enabled = true
 
+      @exception = nil
+
       @game.prepare_next_level unless profile.current_level.number > 0
 
-      # Start level.
-      @_level = profile.current_level
-      level.load_player
-      level.load_level
-
-      @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
-      every(100) do
+      stop_timer :refresh_code
+      every(100, :name => :refresh_code) do
         begin
           player_code = File.read File.join(level.player_path, "player.rb")
-          unless @code_display.text == player_code
+          unless @code_display.stripped_text.strip == player_code.strip
             @code_display.text = player_code
             prepare_level
           end
@@ -113,15 +110,28 @@ module RubyArmor
         end
       end
 
-      print "Starting Level #{level.number}\n"
-      @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
+      @_level = profile.current_level
       @turn = 0
       @playing = false
+      level.load_level
+
+      @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
+
+      print "#{profile.warrior_name} climbs up to level #{level.number}\n"
+      @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
 
       warrior = floor.units.find {|u| u.is_a? RubyWarrior::Units::Warrior }
       @entry_x, @entry_y = warrior.position.x, warrior.position.y
 
       refresh_labels
+
+      # Load the player's own code, which might explode!
+      begin
+        level.load_player
+      rescue SyntaxError, StandardError => ex
+        handle_exception ex
+        return
+      end
     end
 
     def refresh_labels
@@ -142,7 +152,7 @@ module RubyArmor
     def replace_syntax(string)
       string.gsub(/warrior\.[^! \n]+./) do |s|
         if s[-1, 1] == '!'
-          "<c=ff0000>#{s}</c>" # Commands.
+          "<c=7777ff>#{s}</c>" # Commands.
         else
           "<c=00ff00>#{s}</c>" # Queries.
         end
@@ -157,8 +167,14 @@ module RubyArmor
       self.puts "- turn #{@turn+1} -"
       self.print floor.character
 
-      floor.units.each(&:prepare_turn)
-      floor.units.each(&:perform_turn)
+      begin
+        floor.units.each(&:prepare_turn)
+        floor.units.each(&:perform_turn)
+      rescue => ex
+        handle_exception ex
+        return
+      end
+
       @turn += 1
       level.time_bonus -= 1 if level.time_bonus > 0
 
@@ -183,12 +199,28 @@ module RubyArmor
       end
     end
 
+    def handle_exception(exception)
+      return if @exception and exception.message == @exception.message
+
+      self.puts "\n#{profile.warrior_name} was eaten by a #{exception.class}!\n"
+      self.puts exception.message
+      self.puts
+      self.puts exception.backtrace.join("\n")
+
+      exception.message =~ /:(\d+):/
+      exception_line = $1.to_i - 1
+      code_lines = @code_display.text.split "\n"
+      code_lines[exception_line] = "<c=ff0000>#{code_lines[exception_line]}</c>"
+      @code_display.text = code_lines.join "\n"
+      @exception = exception
+    end
+
     def out_of_time?
       @turn > @max_turns
     end
 
-    def puts(message)
-      print message + "\n"
+    def puts(message = "")
+      print "#{message}\n"
     end
 
     def print(message)
@@ -271,7 +303,7 @@ module RubyArmor
     def update
       super
 
-      if @playing and Time.now >= @take_next_turn_at and not (level.passed? || level.failed? || out_of_time?)
+      if @playing and Time.now >= @take_next_turn_at and not (level.passed? || level.failed? || out_of_time? || @exception)
         play_turn
       end
     end
