@@ -22,8 +22,12 @@ module RubyArmor
             @health_label = label "Health:"
 
             button_options = { :width => 70 }
-            button "Restart", button_options do
-              start_game
+            @start_button = button "Start", button_options do
+              start_level
+            end
+
+            @reset_button = button "Reset", button_options do
+              prepare_level
             end
 
             @hint_button = button "Hint", button_options do
@@ -32,7 +36,7 @@ module RubyArmor
 
             @continue_button = button "Continue", button_options do
               @game.prepare_next_level
-              start_game
+              prepare_level
             end
           end
         end
@@ -59,13 +63,15 @@ module RubyArmor
         end
       end
 
-      start_game
+      prepare_level
     end
 
-    def start_game
+    def prepare_level
       @log_display.text = ""
       @continue_button.enabled = false
       @hint_button.enabled = false
+      @reset_button.enabled = false
+      @start_button.enabled = true
 
       # Create the game.
       @game = RubyWarrior::Game.new
@@ -100,7 +106,13 @@ module RubyArmor
       @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
       @turn = 0
       @turn_label.text = "Turn:    1"
+      @playing = false
+    end
 
+    def start_level
+      @reset_button.enabled = true
+      @start_button.enabled = false
+      @playing = true
       @take_next_turn_at = Time.now + 0.5
     end
 
@@ -218,7 +230,7 @@ module RubyArmor
     def update
       super
 
-      if Time.now >= @take_next_turn_at and not (level.passed? || level.failed?)
+      if @playing and Time.now >= @take_next_turn_at and not (level.passed? || level.failed?)
         play_turn
       end
     end
