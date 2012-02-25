@@ -32,7 +32,7 @@ module RubyArmor
             end
 
             @hint_button = button "Hint", button_options do
-              message level.tip
+              message replace_syntax(level.tip)
             end
 
             @continue_button = button "Continue", button_options do
@@ -133,7 +133,7 @@ module RubyArmor
     end
 
     def replace_syntax(string)
-      string.gsub(/warrior\.[a-z]+./) do |s|
+      string.gsub(/warrior\.[^! \n]+./) do |s|
         if s[-1, 1] == '!'
           "<c=ff0000>#{s}</c>" # Commands.
         else
