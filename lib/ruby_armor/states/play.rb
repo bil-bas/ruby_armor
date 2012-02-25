@@ -9,6 +9,11 @@ module RubyArmor
 
     trait :timer
 
+    def initialize(game)
+      @game = game
+      super()
+    end
+
     def setup
       super
 
@@ -87,21 +92,6 @@ module RubyArmor
       @hint_button.enabled = false
       @reset_button.enabled = false
       @start_button.enabled = true
-
-      # Create the game.
-      @game = RubyWarrior::Game.new
-
-      # Create brand new profile or use the first of those already set.
-      profile_to_use = if @game.profiles.empty?
-                         new_profile = RubyWarrior::Profile.new
-                         new_profile.tower_path = @game.towers[0].path
-                         new_profile.warrior_name = "Ruby"
-                         new_profile
-                       else
-                         @game.profiles[0]
-                       end
-
-      @game.instance_variable_set :@profile, profile_to_use
 
       @game.prepare_next_level unless profile.current_level.number > 0
 

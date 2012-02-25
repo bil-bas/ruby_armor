@@ -6,7 +6,7 @@ module RubyArmor
       Gosu::enable_undocumented_retrofication
 
       self.caption = "RubyArmour GUI for RubyWarrior"
-      push_game_state Play
+      push_game_state ChooseProfile
     end
   end
 end

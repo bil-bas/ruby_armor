@@ -15,8 +15,10 @@ require "ruby_armor/ruby_warrior_ext/position"
 require "ruby_armor/ruby_warrior_ext/ui"
 require "ruby_armor/ruby_warrior_ext/units/base"
 require "ruby_armor/ruby_warrior_ext/abilities/rest"
+
 require "ruby_armor/floating_text"
 require "ruby_armor/sprite_sheet"
+require "ruby_armor/states/choose_profile"
 require "ruby_armor/states/play"
 require "ruby_armor/window"
 
