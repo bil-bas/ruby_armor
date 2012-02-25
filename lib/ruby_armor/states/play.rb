@@ -97,8 +97,15 @@ module RubyArmor
 
       @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
       every(100) do
-        player_code = File.read File.join(level.player_path, "player.rb")
-        @code_display.text = player_code unless @code_display.text == player_code
+        begin
+          player_code = File.read File.join(level.player_path, "player.rb")
+          unless @code_display.text == player_code
+            @code_display.text = player_code
+            prepare_level
+          end
+        rescue Errno::ENOENT
+          # This can happen if the file is busy.
+        end
       end
 
       print "Starting Level #{level.number}\n"
@@ -169,32 +176,36 @@ module RubyArmor
       @log_window.offset_y = Float::INFINITY
     end
 
+    SPRITE_WIDTH, SPRITE_HEIGHT = 8, 8
+    SPRITE_OFFSET_X, SPRITE_OFFSET_Y = 64, 64
+    SPRITE_SCALE = 7
+
     def draw
       super
 
-      $window.translate 64, 64 do
-        $window.scale 7 do
+      $window.translate SPRITE_OFFSET_X, SPRITE_OFFSET_Y do
+        $window.scale SPRITE_SCALE do
           # Draw walls.
           floor.width.times do |x|
             light = x % 2
             light = 2 if light == 1 and (Gosu::milliseconds / 500) % 2 == 0
-            @tiles[light + 3, @tile_set].draw x * 8, -8, 0
-            @tiles[3, @tile_set].draw x * 8, floor.height * 8, 0
+            @tiles[light + 3, @tile_set].draw x * SPRITE_WIDTH, -SPRITE_HEIGHT, 0
+            @tiles[3, @tile_set].draw x * SPRITE_WIDTH, floor.height * SPRITE_HEIGHT, 0
           end
           floor.height.times do |y|
-            @tiles[3, @tile_set].draw -8, y * 8, 0
-            @tiles[3, @tile_set].draw floor.width * 8, y * 8, 0
+            @tiles[3, @tile_set].draw -SPRITE_WIDTH, y * SPRITE_HEIGHT, 0
+            @tiles[3, @tile_set].draw floor.width * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0
           end
 
           # Draw floor
           floor.width.times do |x|
             floor.height.times do |y|
-              @tiles[(x + y + 1) % 2, @tile_set].draw x * 8, y * 8, 0, 1, 1, FLOOR_COLOR
+              @tiles[(x + y + 1) % 2, @tile_set].draw x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 1, 1, FLOOR_COLOR
             end
           end
 
           # Draw stairs
-          @tiles[2, @tile_set].draw floor.stairs_location[0] * 8, floor.stairs_location[1] * 8, 0
+          @tiles[2, @tile_set].draw floor.stairs_location[0] * SPRITE_WIDTH, floor.stairs_location[1] * SPRITE_HEIGHT, 0
 
           # Draw units.
           floor.units.each do |unit|
@@ -203,10 +214,10 @@ module RubyArmor
                          @sprites[0, 0]
                        when RubyWarrior::Units::Wizard
                          @sprites[0, 1]
-                       when RubyWarrior::Units::Sludge
-                         @sprites[1, 1]
                        when RubyWarrior::Units::ThickSludge
                          @sprites[2, 1]
+                       when RubyWarrior::Units::Sludge
+                         @sprites[1, 1]
                        when RubyWarrior::Units::Archer
                          @sprites[3, 1]
                        when RubyWarrior::Units::Captive
@@ -217,14 +228,23 @@ module RubyArmor
                          raise "unknown unit: #{unit.class}"
                      end
 
-            sprite.draw unit.position.x * 8, unit.position.y * 8, 0
+            sprite.draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, 0
 
             if unit.bound?
-              @sprites[2, 2].draw unit.position.x * 8, unit.position.y * 8, 0
+              @sprites[2, 2].draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, 0
             end
           end
         end
       end
+    end
+
+    def unit_health_changed(unit, amount)
+      color = (amount > 0) ? Color::GREEN : Color::RED
+      y_offset = (amount > 0) ? -0.15 : +0.15
+      FloatingText.create "#{amount > 0 ? "+" : ""}#{amount}",
+                          :color => color,
+                          :x => unit.position.x * SPRITE_SCALE * SPRITE_WIDTH  + (SPRITE_SCALE * SPRITE_WIDTH / 2) + SPRITE_OFFSET_X,
+                          :y => (unit.position.y + y_offset) * SPRITE_SCALE * SPRITE_HEIGHT + SPRITE_OFFSET_Y
     end
 
     def update
