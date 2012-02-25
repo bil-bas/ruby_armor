@@ -17,15 +17,26 @@ module RubyArmor
           vertical padding: 0, height: $window.height * 0.5, align_h: :fill
           vertical padding: 0, height: $window.height * 0.5, width: 100 do
             @tower_label = label ""
-            @level_label = label "Level: 0"
-            @turn_label = label "Turn: 0"
-            @health_label = label "Health: 0"
-            button "restart" do
+            @level_label = label "Level:"
+            @turn_label = label "Turn:"
+            @health_label = label "Health:"
+
+            button_options = { :width => 70 }
+            button "Restart", button_options do
               @log_display.text = ""
               start_game
             end
+
+            @hint_button = button "Hint", button_options do
+
+            end
+
+            @continue_button = button "Continue", button_options do
+
+            end
           end
         end
+
         horizontal padding: 0, spacing: 10 do
           vertical padding: 0, width: 380, spacing: 10, height: $window.height * 0.45 do
             @readme_window = scroll_window width: 380, height: $window.height * 0.23 do
@@ -52,6 +63,9 @@ module RubyArmor
     end
 
     def start_game
+      @continue_button.enabled = false
+      @hint_button.enabled = false
+
       # Create the game.
       @game = RubyWarrior::Game.new
 
@@ -81,10 +95,10 @@ module RubyArmor
       end
 
       print "Starting Level #{level.number}\n"
-      @tower_label.text = profile.tower.name
+      @tower_label.text = profile.tower.name.capitalize
       @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last level is called.
       @turn = 0
-      @turn_label.text = "Turn: 1"
+      @turn_label.text = "Turn:    1"
 
       @take_next_turn_at = Time.now + 0.5
     end
@@ -101,15 +115,16 @@ module RubyArmor
       floor.units.each(&:perform_turn)
       @turn += 1
 
-      @level_label.text = "Level: #{level.number}"
-      @turn_label.text = "Turn: #{@turn+1}"
-      @health_label.text = "Health: #{level.warrior.health}"
+      @level_label.text =  "Level:   #{level.number}"
+      @turn_label.text =   "Turn:   #{(@turn + 1).to_s.rjust(2)}"
+      @health_label.text = "Health: #{level.warrior.health.to_s.rjust(2)}"
 
       level.time_bonus -= 1 if level.time_bonus > 0
 
       @take_next_turn_at = Time.now + 0.5
 
       if level.passed?
+        @continue_button.enabled = true
         if @game.next_level.exists?
           self.puts "Success! You have found the stairs."
         else
