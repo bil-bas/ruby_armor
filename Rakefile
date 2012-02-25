@@ -10,3 +10,4 @@ Dir['rake/**/*.rake'].each {|f| import f }
 Bundler::GemHelper.install_tasks
 task :build => :gemspec
 task :install => :gemspec
+task :release => :gemspec

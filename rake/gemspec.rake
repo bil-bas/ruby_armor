@@ -29,7 +29,7 @@ def generate_gemspec
     s.licenses = ["MIT"]
     s.rubyforge_project = s.name
 
-    s.executables = ["ruby_armour", "ruby_armor"]
+    s.executable = s.name
 
     s.test_files = Dir["test/**/*_spec.rb"]
 
