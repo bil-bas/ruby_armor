@@ -42,7 +42,8 @@ module RubyArmor
       RubyWarrior::UI.proxy = self
 
       @tiles = SpriteSheet.new "tiles.png", TILE_WIDTH, TILE_HEIGHT, 8
-      @sprites = SpriteSheet.new "characters.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
+      @warrior_sprites = SpriteSheet.new "warriors.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
+      @mob_sprites = SpriteSheet.new "mobs.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
       @max_turns = 100 # Just to recognise a stalemate ;)
 
       vertical spacing: 0, padding: 10 do
@@ -380,19 +381,19 @@ module RubyArmor
           floor.units.each do |unit|
             sprite = case unit
                        when RubyWarrior::Units::Warrior
-                         @sprites[FACINGS[unit.position.direction], 0]
+                         @warrior_sprites[FACINGS[unit.position.direction], 0]
                        when RubyWarrior::Units::Wizard
-                         @sprites[0, 1]
+                         @mob_sprites[0, 1]
                        when RubyWarrior::Units::ThickSludge
-                         @sprites[2, 1]
+                         @mob_sprites[2, 1]
                        when RubyWarrior::Units::Sludge
-                         @sprites[1, 1]
+                         @mob_sprites[1, 1]
                        when RubyWarrior::Units::Archer
-                         @sprites[3, 1]
+                         @mob_sprites[3, 1]
                        when RubyWarrior::Units::Captive
-                         @sprites[0, 2]
+                         @mob_sprites[0, 2]
                        when RubyWarrior::Units::Golem
-                         @sprites[1, 2]
+                         @mob_sprites[1, 2]
                        else
                          raise "unknown unit: #{unit.class}"
                      end
@@ -400,7 +401,7 @@ module RubyArmor
             sprite.draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
 
             if unit.bound?
-              @sprites[2, 2].draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
+              @mob_sprites[2, 2].draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
             end
           end
         end
