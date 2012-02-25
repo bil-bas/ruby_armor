@@ -2,6 +2,11 @@ module RubyArmor
   class Play < Fidgit::GuiState
     FLOOR_COLOR = Color.rgba(255, 255, 255, 125)
 
+    TILE_WIDTH, TILE_HEIGHT = 8, 12
+    SPRITE_WIDTH, SPRITE_HEIGHT = 8, 8
+    SPRITE_OFFSET_X, SPRITE_OFFSET_Y = 64, 64
+    SPRITE_SCALE = 7
+
     trait :timer
 
     def setup
@@ -9,8 +14,8 @@ module RubyArmor
 
       RubyWarrior::UI.proxy = self
 
-      @tiles = SpriteSheet.new "tiles.png", 8, 8, 8
-      @sprites = SpriteSheet.new "characters.png", 8, 8, 4
+      @tiles = SpriteSheet.new "tiles.png", TILE_WIDTH, TILE_HEIGHT, 8
+      @sprites = SpriteSheet.new "characters.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
       @max_turns = 75 # Just to recognise a stalemate ;)
 
       vertical spacing: 0, padding: 10 do
@@ -114,6 +119,9 @@ module RubyArmor
       @turn = 0
       @playing = false
 
+      warrior = floor.units.find {|u| u.is_a? RubyWarrior::Units::Warrior }
+      @entry_x, @entry_y = warrior.position.x, warrior.position.y
+
       refresh_labels
     end
 
@@ -190,25 +198,22 @@ module RubyArmor
       @log_window.offset_y = Float::INFINITY
     end
 
-    SPRITE_WIDTH, SPRITE_HEIGHT = 8, 8
-    SPRITE_OFFSET_X, SPRITE_OFFSET_Y = 64, 64
-    SPRITE_SCALE = 7
-
     def draw
       super
 
       $window.translate SPRITE_OFFSET_X, SPRITE_OFFSET_Y do
         $window.scale SPRITE_SCALE do
-          # Draw walls.
+          # Draw horizontal walls.
           floor.width.times do |x|
             light = x % 2
             light = 2 if light == 1 and (Gosu::milliseconds / 500) % 2 == 0
             @tiles[light + 3, @tile_set].draw x * SPRITE_WIDTH, -SPRITE_HEIGHT, 0
-            @tiles[3, @tile_set].draw x * SPRITE_WIDTH, floor.height * SPRITE_HEIGHT, 0
+            @tiles[3, @tile_set].draw x * SPRITE_WIDTH, floor.height * SPRITE_HEIGHT, floor.height
           end
-          floor.height.times do |y|
-            @tiles[3, @tile_set].draw -SPRITE_WIDTH, y * SPRITE_HEIGHT, 0
-            @tiles[3, @tile_set].draw floor.width * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0
+          # Draw vertical walls.
+          (-1..floor.height).each do |y|
+            @tiles[3, @tile_set].draw -SPRITE_WIDTH, y * SPRITE_HEIGHT, y
+            @tiles[3, @tile_set].draw floor.width * SPRITE_WIDTH, y * SPRITE_HEIGHT, y
           end
 
           # Draw floor
@@ -218,8 +223,11 @@ module RubyArmor
             end
           end
 
-          # Draw stairs
+          # Draw stairs (exit)
           @tiles[2, @tile_set].draw floor.stairs_location[0] * SPRITE_WIDTH, floor.stairs_location[1] * SPRITE_HEIGHT, 0
+
+          # Draw trapdoor (entrance)
+          @tiles[6, @tile_set].draw @entry_x * SPRITE_WIDTH, @entry_y * SPRITE_HEIGHT, 0
 
           # Draw units.
           floor.units.each do |unit|
@@ -242,10 +250,10 @@ module RubyArmor
                          raise "unknown unit: #{unit.class}"
                      end
 
-            sprite.draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, 0
+            sprite.draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
 
             if unit.bound?
-              @sprites[2, 2].draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, 0
+              @sprites[2, 2].draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
             end
           end
         end
