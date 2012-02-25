@@ -7,6 +7,20 @@ module RubyArmor
     SPRITE_OFFSET_X, SPRITE_OFFSET_Y = 64, 64
     SPRITE_SCALE = 5
 
+    ENEMY_TYPES = [
+        RubyWarrior::Units::Wizard,
+        RubyWarrior::Units::ThickSludge,
+        RubyWarrior::Units::Sludge,
+        RubyWarrior::Units::Archer,
+    ]
+    WARRIOR_TYPES = [
+        RubyWarrior::Units::Warrior,
+        RubyWarrior::Units::Golem,
+    ]
+    FRIEND_TYPES = [
+        RubyWarrior::Units::Captive,
+    ]
+
     trait :timer
 
     def initialize(game)
@@ -208,13 +222,31 @@ module RubyArmor
     end
 
     def replace_syntax(string)
-      string.gsub(/warrior\.[^! \n]+./) do |s|
+      # Used in readme.
+      string.gsub!(/warrior\.[^! \n]+./) do |s|
         if s[-1, 1] == '!'
-          "<c=7777ff>#{s}</c>" # Commands.
+          "<c=eeee00>#{s}</c>" # Commands.
         else
           "<c=00ff00>#{s}</c>" # Queries.
         end
       end
+
+      replace_log string
+    end
+
+    def replace_log(string)
+      @enemy_pattern ||= /([asw])/i #Archer, sludge, thick sludge, wizard.
+      @friend_pattern ||= /([C])/
+      @warrior_pattern ||= /([@G])/ # Player and golem
+
+      # Used in log.
+      string.gsub(/\|(.*)\|/i) {|c|
+                c.gsub(@enemy_pattern, '<c=ff0000>\1</c>')
+                 .gsub(@friend_pattern, '<c=00dd00>\1</c>')
+                 .gsub(@warrior_pattern, '<c=aaaaff>\1</c>')
+             }
+            .gsub(/^(#{profile.warrior_name}.*)/, '<c=aaaaff>\1</c>')   # Player doing stuff.
+            .gsub(/(\-{3,}| \| )/, '<c=777777>\1</c>')                  # Walls.
     end
 
     def profile; @game.profile; end
@@ -282,8 +314,8 @@ module RubyArmor
     end
 
     def print(message)
-      #$stdout.puts message
-      @log_display.text += message
+      $stdout.puts message
+      @log_display.text += replace_log message
       @log_window.offset_y = Float::INFINITY
     end
 
