@@ -21,7 +21,7 @@ module RubyArmor
 
       @tiles = SpriteSheet.new "tiles.png", TILE_WIDTH, TILE_HEIGHT, 8
       @sprites = SpriteSheet.new "characters.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
-      @max_turns = 75 # Just to recognise a stalemate ;)
+      @max_turns = 100 # Just to recognise a stalemate ;)
 
       vertical spacing: 0, padding: 10 do
         horizontal padding: 0, height: $window.height * 0.5, width: 780 do
