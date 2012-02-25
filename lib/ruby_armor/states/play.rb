@@ -50,7 +50,13 @@ module RubyArmor
             @health_label = label "Health:"
 
             # Buttons underneath them.
-            button_options = { :width => 70, :justify => :center, shortcut: :auto, border_thickness: 0, }
+            button_options = {
+                :width => 70,
+                :justify => :center,
+                shortcut: :auto,
+                shortcut_color: Color.rgb(150, 255, 0),
+                border_thickness: 0,
+            }
             @start_button = button "Start", button_options do
               start_level
             end
