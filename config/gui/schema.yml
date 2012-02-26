@@ -64,6 +64,7 @@
     :rail_width: 14
     :rail_color: ?light_background
     :handle_color: ?handle
+
     
   :ScrollWindow: # < Composite
     :scroll_bar_thickness: 12

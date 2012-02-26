@@ -52,6 +52,7 @@ module RubyArmor
       @turn = turn
       @turn_slider.value = @turn
       @take_next_turn_at = Time.now + @config.turn_delay
+      @current_turn_display.text = replace_log @turn_logs[turn]
 
       turn
     end
@@ -128,14 +129,16 @@ module RubyArmor
           end
         end
 
-        @turn_slider = slider width: 780, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn"
+        @turn_slider = slider width: 780, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn" do |_, turn|
+          @current_turn_display.text = replace_log @turn_logs[turn]
+        end
 
         # Text areas at the bottom.
         horizontal padding: 0, spacing: 10 do
           # Tabs to contain README and player code to the left.
           vertical padding: 0, spacing: 0 do
-            @tabs_group = group do
-              @tab_buttons = horizontal padding: 0, spacing: 4 do
+            @file_tabs_group = group do
+              @file_tab_buttons = horizontal padding: 0, spacing: 4 do
                 %w[README player.rb].each do |name|
                   radio_button(name.to_s, name, border_thickness: 0, tip: "View #{name}")
                 end
@@ -146,7 +149,7 @@ module RubyArmor
 
                   tip = ENV['EDITOR'] ? "Edit file in #{ENV['EDITOR']} (set EDITOR environment variable to use a different editor)" : "ENV['EDITOR'] not set"
                   button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0 do
-                    command = %<#{ENV['EDITOR']} "#{File.join(level.player_path, @tabs_group.value)}">
+                    command = %<#{ENV['EDITOR']} "#{File.join(level.player_path, @file_tabs_group.value)}">
                     $stdout.puts "SYSTEM: #{command}"
                     Thread.new { system command }
                   end
@@ -154,27 +157,46 @@ module RubyArmor
               end
 
               subscribe :changed do |_, value|
-                current = @tab_buttons.find {|elem| elem.value == value }
-                @tab_buttons.each {|t| t.enabled = (t != current) }
+                current = @file_tab_buttons.find {|elem| elem.value == value }
+                @file_tab_buttons.each {|t| t.enabled = (t != current) }
                 current.color, current.background_color = current.background_color, current.color
 
-                @tab_contents.clear
-                @tab_contents.add @tab_windows[value]
+                @file_tab_contents.clear
+                @file_tab_contents.add @file_tab_windows[value]
               end
             end
 
             # Contents of those tabs.
-            @tab_contents = vertical padding: 0, width: 380, spacing: 10, height: $window.height * 0.45
+            @file_tab_contents = vertical padding: 0, width: 380, height: $window.height * 0.5
 
-            create_tab_windows
-            @tabs_group.value = "README"
+            create_file_tab_windows
+            @file_tabs_group.value = "README"
           end
 
-          # Log on the right
-          vertical padding: 0, width: 380, height: 278 do
-            @log_window = scroll_window width: 380, height: 278 do
-              @log_display = text_area width: 368, editable: false
+          # Logs on the right
+          vertical padding: 0, spacing: 0 do
+            @log_tabs_group = group do
+              @log_tab_buttons = horizontal padding: 0, spacing: 4 do
+                ["current turn", "full log"].each do |name|
+                  radio_button(name.capitalize, name, border_thickness: 0, tip: "View #{name}")
+                end
+              end
+
+              subscribe :changed do |_, value|
+                current = @log_tab_buttons.find {|elem| elem.value == value }
+                @log_tab_buttons.each {|t| t.enabled = (t != current) }
+                current.color, current.background_color = current.background_color, current.color
+
+                @log_tab_contents.clear
+                @log_tab_contents.add @log_tab_windows[value]
+              end
             end
+
+            # Contents of those tabs.
+            @log_tab_contents = vertical padding: 0, width: 380, height: $window.height * 0.5
+
+            create_log_tab_windows
+            @log_tabs_group.value = "current turn"
           end
         end
       end
@@ -189,18 +211,32 @@ module RubyArmor
       @turn_duration_label.tip = "Speed of turns (high is faster; currently turns take #{(@config.turn_delay * 1000).to_i}ms)"
     end
 
-    def create_tab_windows
-      @tab_windows = {}
-      @tab_windows["README"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
+    def create_log_tab_windows
+      @log_tab_windows = {}
+      @log_tab_windows["current turn"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
+        @current_turn_display = text_area width: 368, editable: false
+      end
+
+      @log_tab_windows["full log"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
+        @log_display = text_area width: 368, editable: false
+      end
+    end
+
+    def create_file_tab_windows
+      @file_tab_windows = {}
+      @file_tab_windows["README"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
         @readme_display = text_area width: 368, editable: false
       end
 
-      @tab_windows["player.rb"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
+      @file_tab_windows["player.rb"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
         @code_display = text_area width: 368, editable: false
       end
     end
 
     def prepare_level
+      # List of log entries made in each turn.
+      @turn_logs = Hash.new {|h, k| h[k] = "" }
+
       @log_display.text = ""
       @continue_button.enabled = false
       @hint_button.enabled = false
@@ -251,11 +287,17 @@ module RubyArmor
 
       @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
 
+      # Initial log entry.
+      self.puts "- turn #{turn} -"
       print "#{profile.warrior_name} climbs up to level #{level.number}\n"
+      self.print floor.character
+
       @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
 
       warrior = floor.units.find {|u| u.is_a? RubyWarrior::Units::Warrior }
       @entry_x, @entry_y = warrior.position.x, warrior.position.y
+
+      @turn_slider.enabled = false
 
       refresh_labels
 
@@ -271,7 +313,7 @@ module RubyArmor
     def refresh_labels
       @tower_label.text =  profile.tower.name.capitalize
       @level_label.text =  "Level:   #{level.number}"
-      @turn_label.text =   "Turn:   #{@turn.to_s.rjust(2)}"
+      @turn_label.text =   "Turn:   #{turn.to_s.rjust(2)}"
       @health_label.text = "Health: #{level.warrior.health.to_s.rjust(2)}"
     end
 
@@ -317,8 +359,8 @@ module RubyArmor
     def floor; level.floor; end
 
     def play_turn
-      self.puts "- turn #{@turn+1} -"
-      self.print floor.character
+      self.turn += 1
+      self.puts "- turn #{turn} -"
 
       begin
         floor.units.each(&:prepare_turn)
@@ -328,10 +370,12 @@ module RubyArmor
         return
       end
 
-      self.turn += 1
+      self.print floor.character
+
       level.time_bonus -= 1 if level.time_bonus > 0
 
       refresh_labels
+
 
       if level.passed?
         if @game.next_level.exists?
@@ -340,13 +384,20 @@ module RubyArmor
         else
           self.puts "CONGRATULATIONS! You have climbed to the top of the tower and rescued the fair maiden Ruby."
         end
+
         level.tally_points
+        @turn_slider.enabled = true
+
       elsif level.failed?
         @hint_button.enabled = true
+        @turn_slider.enabled = true
         self.puts "Sorry, you failed level #{level.number}. Change your script and try again."
+
       elsif out_of_time?
         @hint_button.enabled = true
+        @turn_slider.enabled = true
         self.puts "Sorry, you starved to death on level #{level.number}. Change your script and try again."
+
       end
     end
 
@@ -371,7 +422,7 @@ module RubyArmor
     end
 
     def out_of_time?
-      @turn >= MAX_TURNS
+      turn >= MAX_TURNS
     end
 
     def puts(message = "")
@@ -379,9 +430,12 @@ module RubyArmor
     end
 
     def print(message)
+      @turn_logs[turn] << message
+      @current_turn_display.text = replace_log @turn_logs[turn]
+
       #$stdout.puts message
       @log_display.text += replace_log message
-      @log_window.offset_y = Float::INFINITY
+      @log_tab_windows["full log"].offset_y = Float::INFINITY
     end
 
     def draw
@@ -457,6 +511,10 @@ module RubyArmor
 
     def update
       super
+
+      if @turn_slider.value > turn
+        @turn_slider.value = turn
+      end
 
       if @playing and Time.now >= @take_next_turn_at and not (level.passed? || level.failed? || out_of_time? || @exception)
         play_turn
