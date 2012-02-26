@@ -107,7 +107,7 @@ module RubyArmor
                 update_turn_delay
               end
 
-              @turn_duration_label = label "", tip: "Speed of turns (high is faster)", align: :center
+              @turn_duration_label = label "", align: :center
 
               @turn_faster_button = button "+", button_options.merge(tip: "Make turns run faster") do
                 @config.turn_delay = [@config.turn_delay - TURN_DELAY_STEP, MIN_TURN_DELAY].max if @config.turn_delay > MIN_TURN_DELAY
@@ -176,6 +176,7 @@ module RubyArmor
       @turn_duration_label.text = "%2d" % [(MAX_TURN_DELAY / TURN_DELAY_STEP) + 1 - (@config.turn_delay / TURN_DELAY_STEP)]
       @turn_slower_button.enabled = @config.turn_delay < MAX_TURN_DELAY
       @turn_faster_button.enabled = @config.turn_delay > MIN_TURN_DELAY
+      @turn_duration_label.tip = "Speed of turns (high is faster; currently turns take #{(@config.turn_delay * 1000).to_i}ms)"
     end
 
     def create_tab_windows
