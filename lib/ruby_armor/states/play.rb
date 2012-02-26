@@ -134,6 +134,11 @@ module RubyArmor
         end
 
         @continue_button = button "Continue", button_options.merge(tip: "Climb up the stairs to the next level") do
+          # Save the code used to complete the level for posterity.
+          File.open File.join(profile.player_path, "ruby_armor/player_#{level.number.to_s.rjust(2, '0')}.rb"), "w" do |file|
+            file.puts @loaded_code
+          end
+          # Move to next level.
           @game.prepare_next_level
           prepare_level
         end
