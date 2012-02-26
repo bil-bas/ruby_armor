@@ -246,9 +246,6 @@ module RubyArmor
     end
 
     def prepare_level
-      # List of log entries made in each turn.
-      @turn_logs = Hash.new {|h, k| h[k] = "" }
-      @units_record = Hash.new
       @recorded_log = nil # Not initially logging.
 
       @log_display.text = ""
@@ -264,9 +261,15 @@ module RubyArmor
       create_sync_timer
 
       @level = profile.current_level # Need to store this because it gets forgotten by the profile/game :(
-      self.turn = 0
       @playing = false
       level.load_level
+
+      # List of log entries, unit drawings and health made in each turn.
+      @turn_logs = Hash.new {|h, k| h[k] = "" }
+      @units_record = Array.new
+      @health = [level.warrior.health]
+
+      self.turn = 0
 
       @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
 
@@ -329,10 +332,11 @@ module RubyArmor
     end
 
     def refresh_labels
+      turn_to_display = @turn_slider.value
       @tower_label.text =  profile.tower.name.capitalize
       @level_label.text =  "Level:   #{level.number}"
-      @turn_label.text =   "Turn:   #{@turn_slider.value.to_s.rjust(2)}"
-      @health_label.text = "Health: #{level.warrior ? level.warrior.health.to_s.rjust(2) : ' 0'}"
+      @turn_label.text =   "Turn:   #{turn_to_display.to_s.rjust(2)}"
+      @health_label.text = "Health: #{@health[turn_to_display].to_s.rjust(2)}"
     end
 
     def start_level
@@ -406,6 +410,8 @@ module RubyArmor
         handle_exception ex
         return
       end
+
+      @health[turn] = level.warrior.health # Record health for later playback.
 
       level.time_bonus -= 1 if level.time_bonus > 0
 
