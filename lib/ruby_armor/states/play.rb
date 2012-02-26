@@ -275,13 +275,14 @@ module RubyArmor
       @warrior_pattern ||= /([@G])/ # Player and golem
 
       # Used in log.
-      string.gsub(/\|(.*)\|/i) {|c|
-                c.gsub(@enemy_pattern, '<c=ff0000>\1</c>')
-                 .gsub(@friend_pattern, '<c=00dd00>\1</c>')
-                 .gsub(@warrior_pattern, '<c=aaaaff>\1</c>')
+      string.gsub(/\|.*\|/i) {|c|
+                 c = c.gsub @enemy_pattern, '<c=ff0000>\1</c>'
+                 c.gsub! @friend_pattern, '<c=00dd00>\1</c>'
+                 c.gsub! @warrior_pattern, '<c=aaaaff>\1</c>'
+                 c.gsub '|', '<c=777777>|</c>'
              }
             .gsub(/^(#{profile.warrior_name}.*)/, '<c=aaaaff>\1</c>')   # Player doing stuff.
-            .gsub(/(\-{3,}| \| )/, '<c=777777>\1</c>')                  # Walls.
+            .gsub(/(\-{3,})/, '<c=777777>\1</c>')                  # Walls.
     end
 
     def profile; @game.profile; end
