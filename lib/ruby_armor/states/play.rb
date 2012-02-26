@@ -300,10 +300,13 @@ module RubyArmor
       warrior = floor.units.find {|u| u.is_a? RubyWarrior::Units::Warrior }
       @entry_x, @entry_y = warrior.position.x, warrior.position.y
 
+      # Reset the time-line slider.
       @turn_slider.enabled = false
+      @turn_slider.value = 0
 
       refresh_labels
 
+      # Work out how to offset the level graphics based on how large it is (should be centered in the level area.
       level_width = floor.width * SPRITE_SCALE * SPRITE_WIDTH
       level_height = floor.height * SPRITE_SCALE * SPRITE_HEIGHT
       @level_offset_x = (@game_window.width - level_width) / 2
