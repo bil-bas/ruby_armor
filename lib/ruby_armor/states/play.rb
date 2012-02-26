@@ -4,7 +4,6 @@ module RubyArmor
 
     TILE_WIDTH, TILE_HEIGHT = 8, 12
     SPRITE_WIDTH, SPRITE_HEIGHT = 8, 8
-    SPRITE_OFFSET_X, SPRITE_OFFSET_Y = 48, 48
     SPRITE_SCALE = 5
 
     MAX_TURN_DELAY = 1
@@ -84,9 +83,9 @@ module RubyArmor
       end
 
       vertical spacing: 10, padding: 10 do
-        horizontal padding: 0, height: 260, width: 780 do
+        horizontal padding: 0, height: 260, width: 780, spacing: 10 do
           # Space for the game graphics.
-          vertical padding: 0, height: 260, align_h: :fill
+          @game_window = vertical padding: 0, width: 670, height: 260
 
           create_ui_bar
         end
@@ -305,6 +304,11 @@ module RubyArmor
 
       refresh_labels
 
+      level_width = floor.width * SPRITE_SCALE * SPRITE_WIDTH
+      level_height = floor.height * SPRITE_SCALE * SPRITE_HEIGHT
+      @level_offset_x = (@game_window.width - level_width) / 2
+      @level_offset_y =  (@game_window.height - level_height) / 2
+
       # Load the player's own code, which might explode!
       begin
         level.load_player
@@ -514,27 +518,9 @@ module RubyArmor
     def draw
       super
 
-      $window.translate SPRITE_OFFSET_X, SPRITE_OFFSET_Y do
+      $window.translate @level_offset_x, @level_offset_y do
         $window.scale SPRITE_SCALE do
-          # Draw horizontal walls.
-          floor.width.times do |x|
-            light = x % 2
-            light = 2 if light == 1 and (Gosu::milliseconds / 500) % 2 == 0
-            @tiles[light + 3, @tile_set].draw x * SPRITE_WIDTH, -SPRITE_HEIGHT, 0
-            @tiles[3, @tile_set].draw x * SPRITE_WIDTH, floor.height * SPRITE_HEIGHT, floor.height
-          end
-          # Draw vertical walls.
-          (-1..floor.height).each do |y|
-            @tiles[3, @tile_set].draw -SPRITE_WIDTH, y * SPRITE_HEIGHT, y
-            @tiles[3, @tile_set].draw floor.width * SPRITE_WIDTH, y * SPRITE_HEIGHT, y
-          end
-
-          # Draw floor
-          floor.width.times do |x|
-            floor.height.times do |y|
-              @tiles[(x + y + 1) % 2, @tile_set].draw x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 1, 1, FLOOR_COLOR
-            end
-          end
+          draw_map
 
           # Draw stairs (exit)
           @tiles[2, @tile_set].draw floor.stairs_location[0] * SPRITE_WIDTH, floor.stairs_location[1] * SPRITE_HEIGHT, 0
@@ -543,6 +529,28 @@ module RubyArmor
           @tiles[6, @tile_set].draw @entry_x * SPRITE_WIDTH, @entry_y * SPRITE_HEIGHT, 0
 
           draw_units
+        end
+      end
+    end
+
+    def draw_map
+      # Draw horizontal walls.
+      floor.width.times do |x|
+        light = x % 2
+        light = 2 if light == 1 and (Gosu::milliseconds / 500) % 2 == 0
+        @tiles[light + 3, @tile_set].draw x * SPRITE_WIDTH, -SPRITE_HEIGHT, 0
+        @tiles[3, @tile_set].draw x * SPRITE_WIDTH, floor.height * SPRITE_HEIGHT, floor.height
+      end
+      # Draw vertical walls.
+      (-1..floor.height).each do |y|
+        @tiles[3, @tile_set].draw -SPRITE_WIDTH, y * SPRITE_HEIGHT, y
+        @tiles[3, @tile_set].draw floor.width * SPRITE_WIDTH, y * SPRITE_HEIGHT, y
+      end
+
+      # Draw floor
+      floor.width.times do |x|
+        floor.height.times do |y|
+          @tiles[(x + y + 1) % 2, @tile_set].draw x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 1, 1, FLOOR_COLOR
         end
       end
     end
@@ -585,8 +593,8 @@ module RubyArmor
       y_offset = (amount > 0) ? -0.15 : +0.15
       FloatingText.create "#{amount > 0 ? "+" : ""}#{amount}",
                           :color => color,
-                          :x => unit.position.x * SPRITE_SCALE * SPRITE_WIDTH  + (SPRITE_SCALE * SPRITE_WIDTH / 2) + SPRITE_OFFSET_X,
-                          :y => (unit.position.y + y_offset) * SPRITE_SCALE * SPRITE_HEIGHT + SPRITE_OFFSET_Y
+                          :x => unit.position.x * SPRITE_SCALE * SPRITE_WIDTH  + (SPRITE_SCALE * SPRITE_WIDTH / 2) + @level_offset_x,
+                          :y => (unit.position.y + y_offset) * SPRITE_SCALE * SPRITE_HEIGHT + @level_offset_y
     end
 
     def update
