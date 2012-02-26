@@ -54,6 +54,8 @@ module RubyArmor
       @mob_sprites = SpriteSheet.new "mobs.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
       @max_turns = 100 # Just to recognise a stalemate ;)
 
+      on_input(:escape) { pop_game_state }
+
       vertical spacing: 0, padding: 10 do
         horizontal padding: 0, height: $window.height * 0.5, width: 780 do
           # Space for the game graphics.
