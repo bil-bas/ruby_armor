@@ -68,4 +68,5 @@
   :ScrollWindow: # < Composite
     :scroll_bar_thickness: 12
     :border_color: ?light_border
+    :background_color: ?dark_background
 

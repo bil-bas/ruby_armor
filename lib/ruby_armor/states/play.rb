@@ -175,7 +175,6 @@ module RubyArmor
             @log_window = scroll_window width: 380, height: 278 do
               @log_display = text_area width: 368, editable: false
             end
-            @log_window.background_color = @log_display.background_color
           end
         end
       end
@@ -195,12 +194,10 @@ module RubyArmor
       @tab_windows["README"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
         @readme_display = text_area width: 368, editable: false
       end
-      @tab_windows["README"].background_color = @readme_display.background_color
 
       @tab_windows["player.rb"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
         @code_display = text_area width: 368, editable: false
       end
-      @tab_windows["player.rb"].background_color = @code_display.background_color
     end
 
     def prepare_level
