@@ -463,6 +463,10 @@ module RubyArmor
 
       end
 
+      # Add the full turn's text into the main log at once, to save on re-calculations.
+      @log_contents["full log"].text += @log_contents["current turn"].text
+      @log_tab_windows["full log"].offset_y = Float::INFINITY
+
       self.puts
     end
 
@@ -508,10 +512,6 @@ module RubyArmor
       else
         @turn_logs[turn] << message
         @log_contents["current turn"].text = replace_log @turn_logs[turn]
-
-        #$stdout.puts message
-        @log_contents["full log"].text += replace_log message
-        @log_tab_windows["full log"].offset_y = Float::INFINITY
       end
     end
 
