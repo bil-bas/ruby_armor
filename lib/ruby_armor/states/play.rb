@@ -248,6 +248,7 @@ module RubyArmor
     def prepare_level
       # List of log entries made in each turn.
       @turn_logs = Hash.new {|h, k| h[k] = "" }
+      @units_record = Hash.new
       @recorded_log = nil # Not initially logging.
 
       @log_display.text = ""
@@ -508,35 +509,42 @@ module RubyArmor
           # Draw trapdoor (entrance)
           @tiles[6, @tile_set].draw @entry_x * SPRITE_WIDTH, @entry_y * SPRITE_HEIGHT, 0
 
-          # Draw units.
-          floor.units.each do |unit|
-            sprite = case unit
-                       when RubyWarrior::Units::Warrior
-                         @warrior_sprites[FACINGS[unit.position.direction], WARRIORS[@config.warrior_class]]
-                       when RubyWarrior::Units::Wizard
-                         @mob_sprites[0, 1]
-                       when RubyWarrior::Units::ThickSludge
-                         @mob_sprites[2, 1]
-                       when RubyWarrior::Units::Sludge
-                         @mob_sprites[1, 1]
-                       when RubyWarrior::Units::Archer
-                         @mob_sprites[3, 1]
-                       when RubyWarrior::Units::Captive
-                         @mob_sprites[0, 2]
-                       when RubyWarrior::Units::Golem
-                         @mob_sprites[1, 2]
-                       else
-                         raise "unknown unit: #{unit.class}"
-                     end
+          draw_units
+        end
+      end
+    end
 
-            sprite.draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
+    def draw_units
+      @units_record[@turn_slider.value] ||= $window.record 1, 1 do
+        floor.units.sort_by {|u| u.position.y }.each do |unit|
+          sprite = case unit
+                     when RubyWarrior::Units::Warrior
+                       @warrior_sprites[FACINGS[unit.position.direction], WARRIORS[@config.warrior_class]]
+                     when RubyWarrior::Units::Wizard
+                       @mob_sprites[0, 1]
+                     when RubyWarrior::Units::ThickSludge
+                       @mob_sprites[2, 1]
+                     when RubyWarrior::Units::Sludge
+                       @mob_sprites[1, 1]
+                     when RubyWarrior::Units::Archer
+                       @mob_sprites[3, 1]
+                     when RubyWarrior::Units::Captive
+                       @mob_sprites[0, 2]
+                     when RubyWarrior::Units::Golem
+                       @mob_sprites[1, 2]
+                     else
+                       raise "unknown unit: #{unit.class}"
+                   end
 
-            if unit.bound?
-              @mob_sprites[2, 2].draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
-            end
+          sprite.draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
+
+          if unit.bound?
+            @mob_sprites[2, 2].draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, 0
           end
         end
       end
+
+      @units_record[@turn_slider.value].draw 0, 0, 0
     end
 
     def unit_health_changed(unit, amount)
