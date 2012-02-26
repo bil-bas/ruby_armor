@@ -10,14 +10,17 @@ module RubyArmor
 
       warrior_sprites = SpriteSheet.new "warriors.png", Play::SPRITE_WIDTH, Play::SPRITE_HEIGHT, 4
 
-      vertical align_h: :center, spacing: 50 do
-        label "RubyArmor", align: :center, font_height: 120, padding_top: 50
+      vertical align_h: :center, spacing: 40 do
+        vertical align: :center, padding: 0 do
+          label "RubyArmor", align: :center, font_height: 80, padding_top: 50
+          label "by Spooner", align: :center, font_height: 12
+        end
 
         button_options = { width: 400, align: :center, justify: :center }
 
         # Use existing profile.
         vertical padding: 0, align_h: :center do
-          scroll_window height: 200, width: 460 do
+          scroll_window height: 250, width: 460 do
             @game.profiles.each do |profile|
               config = WarriorConfig.new profile
 
@@ -36,7 +39,7 @@ module RubyArmor
         # Option to create a new profile.
         vertical padding: 0, align: :center do
           horizontal align: :center, padding: 0 do
-            @new_name = text_area width: 300, height: 35, font_height: 24 do |_, text|
+            @new_name = text_area width: 300, height: 30, font_height: 20 do |_, text|
               duplicate = @game.profiles.any? {|p| p.warrior_name.downcase == text.downcase }
               @new_profile_button.enabled = !(text.empty? or duplicate)
             end
@@ -63,6 +66,11 @@ module RubyArmor
           @warrior_class.value = DEFAULT_WARRIOR_CLASS
         end
       end
+    end
+
+    def update
+      super
+      @new_name.focus self unless @new_name.focused?
     end
 
     def finalize
