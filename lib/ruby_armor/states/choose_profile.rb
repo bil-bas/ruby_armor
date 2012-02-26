@@ -17,16 +17,18 @@ module RubyArmor
 
         # Use existing profile.
         vertical padding: 0, align_h: :center do
-          @game.profiles.each do |profile|
-            config = WarriorConfig.new profile
+          scroll_window height: 200, width: 460 do
+            @game.profiles.each do |profile|
+              config = WarriorConfig.new profile
 
-            title = "#{profile.warrior_name.ljust(20)} #{profile.tower.name.rjust(12)}:#{profile.level_number} #{profile.score.to_s.rjust(5)}"
-            tip = "Play as #{profile.warrior_name} the #{config.warrior_class.capitalize} - #{profile.tower.name} - level #{profile.level_number} - score #{profile.score}"
+              title = "#{profile.warrior_name.ljust(20)} #{profile.tower.name.rjust(12)}:#{profile.level_number} #{profile.score.to_s.rjust(5)}"
+              tip = "Play as #{profile.warrior_name} the #{config.warrior_class.capitalize} - #{profile.tower.name} - level #{profile.level_number} - score #{profile.score}"
 
-            # Can be disabled because of a bug in RubyWarrior paths.
-            button title, button_options.merge(tip: tip, enabled: File.directory?(profile.tower_path),
-                                               icon: warrior_sprites[0, Play::WARRIORS[config.warrior_class]], icon_options: { factor: 2 }) do
-              play profile, config
+              # Can be disabled because of a bug in RubyWarrior paths.
+              button title, button_options.merge(tip: tip, enabled: File.directory?(profile.tower_path),
+                                                 icon: warrior_sprites[0, Play::WARRIORS[config.warrior_class]], icon_options: { factor: 2 }) do
+                play profile, config
+              end
             end
           end
         end
@@ -65,7 +67,6 @@ module RubyArmor
 
     def play(profile, config)
       @game.instance_variable_set :@profile, profile
-      p config
       push_game_state Play.new(@game, config)
     end
 
