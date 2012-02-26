@@ -11,6 +11,8 @@ module RubyArmor
     MIN_TURN_DELAY = 0
     TURN_DELAY_STEP = 0.1
 
+    MAX_TURNS = 100
+
     SHORTCUT_COLOR = Color.rgb(175, 255, 100)
 
     # Sprites to show based on player facing.
@@ -45,6 +47,15 @@ module RubyArmor
 
     trait :timer
 
+    attr_reader :turn
+    def turn=(turn)
+      @turn = turn
+      @turn_slider.value = @turn
+      @take_next_turn_at = Time.now + @config.turn_delay
+
+      turn
+    end
+
     def initialize(game, config)
       @game, @config = game, config
       super()
@@ -58,20 +69,19 @@ module RubyArmor
       @tiles = SpriteSheet.new "tiles.png", TILE_WIDTH, TILE_HEIGHT, 8
       @warrior_sprites = SpriteSheet.new "warriors.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
       @mob_sprites = SpriteSheet.new "mobs.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
-      @max_turns = 100 # Just to recognise a stalemate ;)
 
       on_input(:escape) { pop_game_state }
 
-      vertical spacing: 0, padding: 10 do
-        horizontal padding: 0, height: $window.height * 0.5, width: 780 do
+      vertical spacing: 10, padding: 10 do
+        horizontal padding: 0, height: 260, width: 780 do
           # Space for the game graphics.
-          vertical padding: 0, height: $window.height * 0.5, align_h: :fill
+          vertical padding: 0, height: 260, align_h: :fill
 
-          vertical padding: 0, height: $window.height * 0.5, width: 100 do
+          vertical padding: 0, height: 260, width: 100 do
             # Labels at top-right.
             @tower_label = label "", tip: "Each tower has a different difficulty level"
             @level_label = label "Level:", tip: "Each tower contains 9 levels"
-            @turn_label = label "Turn:", tip: "Current turn; starvation at #{@max_turns} to avoid endless games"
+            @turn_label = label "Turn:", tip: "Current turn; starvation at #{MAX_TURNS} to avoid endless games"
             @health_label = label "Health:", tip: "The warrior's remaining health; death occurs at 0"
 
             # Buttons underneath them.
@@ -99,7 +109,6 @@ module RubyArmor
               prepare_level
             end
 
-            # Choose turn-duration with a slider.
             horizontal padding: 0, spacing: 21 do
               button_options = { padding: 4, border_thickness: 0, shortcut: :auto, shortcut_color: SHORTCUT_COLOR }
               @turn_slower_button = button "-", button_options.merge(tip: "Make turns run slower") do
@@ -118,6 +127,8 @@ module RubyArmor
             end
           end
         end
+
+        @turn_slider = slider width: 780, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn"
 
         # Text areas at the bottom.
         horizontal padding: 0, spacing: 10 do
@@ -237,7 +248,7 @@ module RubyArmor
       end
 
       @level = profile.current_level # Need to store this because it gets forgotten by the profile/game :(
-      @turn = 0
+      self.turn = 0
       @playing = false
       level.load_level
 
@@ -271,7 +282,7 @@ module RubyArmor
       @reset_button.enabled = true
       @start_button.enabled = false
       @playing = true
-      @take_next_turn_at = Time.now + @config.turn_delay
+      self.turn = 0
       refresh_labels
     end
 
@@ -320,10 +331,8 @@ module RubyArmor
         return
       end
 
-      @turn += 1
+      self.turn += 1
       level.time_bonus -= 1 if level.time_bonus > 0
-
-      @take_next_turn_at = Time.now + @config.turn_delay
 
       refresh_labels
 
@@ -365,7 +374,7 @@ module RubyArmor
     end
 
     def out_of_time?
-      @turn > @max_turns
+      @turn >= MAX_TURNS
     end
 
     def puts(message = "")
