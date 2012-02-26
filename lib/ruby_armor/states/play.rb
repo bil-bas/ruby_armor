@@ -248,6 +248,7 @@ module RubyArmor
     def prepare_level
       # List of log entries made in each turn.
       @turn_logs = Hash.new {|h, k| h[k] = "" }
+      @recorded_log = nil # Not initially logging.
 
       @log_display.text = ""
       @continue_button.enabled = false
@@ -270,9 +271,8 @@ module RubyArmor
 
       # Initial log entry.
       self.puts "- turn   0 -"
-      self.print floor.character.sub "@", " "
-      print "#{profile.warrior_name} climbs up to level #{level.number}\n"
       self.print floor.character
+      print "#{profile.warrior_name} climbs up to level #{level.number}\n"
 
       @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
 
@@ -375,20 +375,36 @@ module RubyArmor
     def level; @level; end
     def floor; level.floor; end
 
+    def recording_log?; not @recorded_log.nil?; end
+    def record_log
+      raise "block required" unless block_given?
+      @recorded_log = ""
+      record = ""
+      begin
+        yield
+      ensure
+        record = @recorded_log
+        @recorded_log = nil
+      end
+      record
+    end
+
     def play_turn
       self.turn += 1
       self.puts "- turn #{turn.to_s.rjust(3)} -"
-      self.print floor.character # Before.
 
       begin
-        floor.units.each(&:prepare_turn)
-        floor.units.each(&:perform_turn)
+        actions = record_log do
+          floor.units.each(&:prepare_turn)
+          floor.units.each(&:perform_turn)
+        end
+
+        self.print floor.character # State after
+        self.print actions
       rescue => ex
         handle_exception ex
         return
       end
-
-      self.print floor.character # After
 
       level.time_bonus -= 1 if level.time_bonus > 0
 
@@ -449,12 +465,16 @@ module RubyArmor
     end
 
     def print(message)
-      @turn_logs[turn] << message
-      @current_turn_display.text = replace_log @turn_logs[turn]
+      if recording_log?
+        @recorded_log << message
+      else
+        @turn_logs[turn] << message
+        @current_turn_display.text = replace_log @turn_logs[turn]
 
-      #$stdout.puts message
-      @log_display.text += replace_log message
-      @log_tab_windows["full log"].offset_y = Float::INFINITY
+        #$stdout.puts message
+        @log_display.text += replace_log message
+        @log_tab_windows["full log"].offset_y = Float::INFINITY
+      end
     end
 
     def draw
