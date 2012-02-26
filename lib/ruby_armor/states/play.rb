@@ -52,7 +52,7 @@ module RubyArmor
       @turn = turn
       @turn_slider.value = @turn
       @take_next_turn_at = Time.now + @config.turn_delay
-      @current_turn_display.text = replace_log @turn_logs[turn]
+      @log_contents["current turn"].text = replace_log @turn_logs[turn]
 
       turn
     end
@@ -82,7 +82,7 @@ module RubyArmor
         end
 
         @turn_slider = slider width: 780, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn" do |_, turn|
-          @current_turn_display.text = replace_log @turn_logs[turn]
+          @log_contents["current turn"].text = replace_log @turn_logs[turn]
           refresh_labels
         end
 
@@ -155,6 +155,12 @@ module RubyArmor
             ["current turn", "full log"].each do |name|
               radio_button(name.capitalize, name, border_thickness: 0, tip: "View #{name}")
             end
+
+            horizontal padding_left: 50, padding: 0 do
+              button "copy", tip: "Copy displayed log to clipboard", font_height: 12, border_thickness: 0, padding: 4 do
+                Clipboard.copy @log_contents[@log_tabs_group.value].stripped_text
+              end
+            end
           end
 
           subscribe :changed do |_, value|
@@ -185,12 +191,16 @@ module RubyArmor
               radio_button(name.to_s, name, border_thickness: 0, tip: "View #{name}")
             end
 
-            horizontal padding: 0, padding_left: 70 do
+            horizontal padding_left: 50, padding: 0 do
+              button "copy", tip: "Copy displayed file to clipboard", font_height: 12, border_thickness: 0, padding: 4 do
+                Clipboard.copy @file_contents[@file_tabs_group.value].stripped_text
+              end
+
               # Default editor for Windows.
               ENV['EDITOR'] = "notepad" if Gem.win_platform? and ENV['EDITOR'].nil?
 
               tip = ENV['EDITOR'] ? "Edit file in #{ENV['EDITOR']} (set EDITOR environment variable to use a different editor)" : "ENV['EDITOR'] not set"
-              button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0 do
+              button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0, padding: 4 do
                 command = %<#{ENV['EDITOR']} "#{File.join(level.player_path, @file_tabs_group.value)}">
                 $stdout.puts "SYSTEM: #{command}"
                 Thread.new { system command }
@@ -225,30 +235,28 @@ module RubyArmor
 
     def create_log_tab_windows
       @log_tab_windows = {}
-      @log_tab_windows["current turn"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
-        @current_turn_display = text_area width: 368, editable: false
-      end
-
-      @log_tab_windows["full log"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
-        @log_display = text_area width: 368, editable: false
+      @log_contents = {}
+      ["current turn", "full log"].each do |log|
+        @log_tab_windows[log] = Fidgit::ScrollWindow.new width: 380, height: 250 do
+          @log_contents[log] = text_area width: 368, editable: false
+        end
       end
     end
 
     def create_file_tab_windows
       @file_tab_windows = {}
-      @file_tab_windows["README"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
-        @readme_display = text_area width: 368, editable: false
-      end
-
-      @file_tab_windows["player.rb"] = Fidgit::ScrollWindow.new width: 380, height: 250 do
-        @code_display = text_area width: 368, editable: false
+      @file_contents = {}
+      ["README", "player.rb"].each do |file|
+        @file_tab_windows[file] = Fidgit::ScrollWindow.new width: 380, height: 250 do
+          @file_contents[file] = text_area width: 368, editable: false
+        end
       end
     end
 
     def prepare_level
       @recorded_log = nil # Not initially logging.
 
-      @log_display.text = ""
+      @log_contents["full log"].text = ""
       @continue_button.enabled = false
       @hint_button.enabled = false
       @reset_button.enabled = false
@@ -271,7 +279,7 @@ module RubyArmor
 
       self.turn = 0
 
-      @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
+      @file_contents["README"].text = replace_syntax File.read(File.join(level.player_path, "README"))
 
       # Initial log entry.
       self.puts "- turn   0 -"
@@ -321,7 +329,7 @@ module RubyArmor
             end
             friendly_line_endings = true # Either will have or don't need to.
 
-            @code_display.text = stripped_code
+            @file_contents["player.rb"].text = stripped_code
             @loaded_code = stripped_code
             prepare_level
           end
@@ -454,9 +462,9 @@ module RubyArmor
       # TODO: Make this work without it raising exceptions in Fidgit :(
       #exception.message =~ /:(\d+):/
       #exception_line = $1.to_i - 1
-      #code_lines = @code_display.text.split "\n"
+      #code_lines = @file_contents["player.rb"].text.split "\n"
       #code_lines[exception_line] = "<c=ff0000>{code_lines[exception_line]}</c>"
-      #@code_display.text = code_lines.join "\n"
+      #@file_contents["player.rb"].text = code_lines.join "\n"
 
       @start_button.enabled = false
 
@@ -476,10 +484,10 @@ module RubyArmor
         @recorded_log << message
       else
         @turn_logs[turn] << message
-        @current_turn_display.text = replace_log @turn_logs[turn]
+        @log_contents["current turn"].text = replace_log @turn_logs[turn]
 
         #$stdout.puts message
-        @log_display.text += replace_log message
+        @log_contents["full log"].text += replace_log message
         @log_tab_windows["full log"].offset_y = Float::INFINITY
       end
     end
