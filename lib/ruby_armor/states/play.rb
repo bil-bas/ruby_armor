@@ -78,130 +78,142 @@ module RubyArmor
           # Space for the game graphics.
           vertical padding: 0, height: 260, align_h: :fill
 
-          vertical padding: 0, height: 260, width: 100 do
-            # Labels at top-right.
-            @tower_label = label "", tip: "Each tower has a different difficulty level"
-            @level_label = label "Level:", tip: "Each tower contains 9 levels"
-            @turn_label = label "Turn:", tip: "Current turn; starvation at #{MAX_TURNS} to avoid endless games"
-            @health_label = label "Health:", tip: "The warrior's remaining health; death occurs at 0"
-
-            # Buttons underneath them.
-            button_options = {
-                :width => 70,
-                :justify => :center,
-                shortcut: :auto,
-                shortcut_color: SHORTCUT_COLOR,
-                border_thickness: 0,
-            }
-            @start_button = button "Start", button_options.merge(tip: "Start running player.rb in this level") do
-              start_level
-            end
-
-            @reset_button = button "Reset", button_options.merge(tip: "Restart the level") do
-              prepare_level
-            end
-
-            @hint_button = button "Hint", button_options.merge(tip: "Get hint on how best to approach the level") do
-              message replace_syntax(level.tip)
-            end
-
-            @continue_button = button "Continue", button_options.merge(tip: "Climb up the stairs to the next level") do
-              @game.prepare_next_level
-              prepare_level
-            end
-
-            horizontal padding: 0, spacing: 21 do
-              button_options = { padding: 4, border_thickness: 0, shortcut: :auto, shortcut_color: SHORTCUT_COLOR }
-              @turn_slower_button = button "-", button_options.merge(tip: "Make turns run slower") do
-                @config.turn_delay = [@config.turn_delay + TURN_DELAY_STEP, MAX_TURN_DELAY].min if @config.turn_delay < MAX_TURN_DELAY
-                update_turn_delay
-              end
-
-              @turn_duration_label = label "", align: :center
-
-              @turn_faster_button = button "+", button_options.merge(tip: "Make turns run faster") do
-                @config.turn_delay = [@config.turn_delay - TURN_DELAY_STEP, MIN_TURN_DELAY].max if @config.turn_delay > MIN_TURN_DELAY
-                update_turn_delay
-              end
-
-              update_turn_delay
-            end
-          end
+          create_ui_bar
         end
 
         @turn_slider = slider width: 780, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn" do |_, turn|
           @current_turn_display.text = replace_log @turn_logs[turn]
+          refresh_labels
         end
 
         # Text areas at the bottom.
         horizontal padding: 0, spacing: 10 do
-          # Tabs to contain README and player code to the left.
-          vertical padding: 0, spacing: 0 do
-            @file_tabs_group = group do
-              @file_tab_buttons = horizontal padding: 0, spacing: 4 do
-                %w[README player.rb].each do |name|
-                  radio_button(name.to_s, name, border_thickness: 0, tip: "View #{name}")
-                end
-
-                horizontal padding: 0, padding_left: 70 do
-                  # Default editor for Windows.
-                  ENV['EDITOR'] = "notepad" if Gem.win_platform? and ENV['EDITOR'].nil?
-
-                  tip = ENV['EDITOR'] ? "Edit file in #{ENV['EDITOR']} (set EDITOR environment variable to use a different editor)" : "ENV['EDITOR'] not set"
-                  button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0 do
-                    command = %<#{ENV['EDITOR']} "#{File.join(level.player_path, @file_tabs_group.value)}">
-                    $stdout.puts "SYSTEM: #{command}"
-                    Thread.new { system command }
-                  end
-                end
-              end
-
-              subscribe :changed do |_, value|
-                current = @file_tab_buttons.find {|elem| elem.value == value }
-                @file_tab_buttons.each {|t| t.enabled = (t != current) }
-                current.color, current.background_color = current.background_color, current.color
-
-                @file_tab_contents.clear
-                @file_tab_contents.add @file_tab_windows[value]
-              end
-            end
-
-            # Contents of those tabs.
-            @file_tab_contents = vertical padding: 0, width: 380, height: $window.height * 0.5
-
-            create_file_tab_windows
-            @file_tabs_group.value = "README"
-          end
-
-          # Logs on the right
-          vertical padding: 0, spacing: 0 do
-            @log_tabs_group = group do
-              @log_tab_buttons = horizontal padding: 0, spacing: 4 do
-                ["current turn", "full log"].each do |name|
-                  radio_button(name.capitalize, name, border_thickness: 0, tip: "View #{name}")
-                end
-              end
-
-              subscribe :changed do |_, value|
-                current = @log_tab_buttons.find {|elem| elem.value == value }
-                @log_tab_buttons.each {|t| t.enabled = (t != current) }
-                current.color, current.background_color = current.background_color, current.color
-
-                @log_tab_contents.clear
-                @log_tab_contents.add @log_tab_windows[value]
-              end
-            end
-
-            # Contents of those tabs.
-            @log_tab_contents = vertical padding: 0, width: 380, height: $window.height * 0.5
-
-            create_log_tab_windows
-            @log_tabs_group.value = "current turn"
-          end
+          create_file_tabs
+          create_log_tabs
         end
       end
 
       prepare_level
+    end
+
+    def create_ui_bar
+      vertical padding: 0, height: 260, width: 100 do
+        # Labels at top-right.
+        @tower_label = label "", tip: "Each tower has a different difficulty level"
+        @level_label = label "Level:", tip: "Each tower contains 9 levels"
+        @turn_label = label "Turn:", tip: "Current turn; starvation at #{MAX_TURNS} to avoid endless games"
+        @health_label = label "Health:", tip: "The warrior's remaining health; death occurs at 0"
+
+        # Buttons underneath them.
+        button_options = {
+            :width => 70,
+            :justify => :center,
+            shortcut: :auto,
+            shortcut_color: SHORTCUT_COLOR,
+            border_thickness: 0,
+        }
+        @start_button = button "Start", button_options.merge(tip: "Start running player.rb in this level") do
+          start_level
+        end
+
+        @reset_button = button "Reset", button_options.merge(tip: "Restart the level") do
+          prepare_level
+        end
+
+        @hint_button = button "Hint", button_options.merge(tip: "Get hint on how best to approach the level") do
+          message replace_syntax(level.tip)
+        end
+
+        @continue_button = button "Continue", button_options.merge(tip: "Climb up the stairs to the next level") do
+          @game.prepare_next_level
+          prepare_level
+        end
+
+        horizontal padding: 0, spacing: 21 do
+          button_options = { padding: 4, border_thickness: 0, shortcut: :auto, shortcut_color: SHORTCUT_COLOR }
+          @turn_slower_button = button "-", button_options.merge(tip: "Make turns run slower") do
+            @config.turn_delay = [@config.turn_delay + TURN_DELAY_STEP, MAX_TURN_DELAY].min if @config.turn_delay < MAX_TURN_DELAY
+            update_turn_delay
+          end
+
+          @turn_duration_label = label "", align: :center
+
+          @turn_faster_button = button "+", button_options.merge(tip: "Make turns run faster") do
+            @config.turn_delay = [@config.turn_delay - TURN_DELAY_STEP, MIN_TURN_DELAY].max if @config.turn_delay > MIN_TURN_DELAY
+            update_turn_delay
+          end
+
+          update_turn_delay
+        end
+      end
+    end
+
+    def create_log_tabs
+      vertical padding: 0, spacing: 0 do
+        @log_tabs_group = group do
+          @log_tab_buttons = horizontal padding: 0, spacing: 4 do
+            ["current turn", "full log"].each do |name|
+              radio_button(name.capitalize, name, border_thickness: 0, tip: "View #{name}")
+            end
+          end
+
+          subscribe :changed do |_, value|
+            current = @log_tab_buttons.find {|elem| elem.value == value }
+            @log_tab_buttons.each {|t| t.enabled = (t != current) }
+            current.color, current.background_color = current.background_color, current.color
+
+            @log_tab_contents.clear
+            @log_tab_contents.add @log_tab_windows[value]
+          end
+        end
+
+        # Contents of those tabs.
+        @log_tab_contents = vertical padding: 0, width: 380, height: $window.height * 0.5
+
+        create_log_tab_windows
+        @log_tabs_group.value = "current turn"
+      end
+    end
+
+
+    def create_file_tabs
+      # Tabs to contain README and player code to the left.
+      vertical padding: 0, spacing: 0 do
+        @file_tabs_group = group do
+          @file_tab_buttons = horizontal padding: 0, spacing: 4 do
+            %w[README player.rb].each do |name|
+              radio_button(name.to_s, name, border_thickness: 0, tip: "View #{name}")
+            end
+
+            horizontal padding: 0, padding_left: 70 do
+              # Default editor for Windows.
+              ENV['EDITOR'] = "notepad" if Gem.win_platform? and ENV['EDITOR'].nil?
+
+              tip = ENV['EDITOR'] ? "Edit file in #{ENV['EDITOR']} (set EDITOR environment variable to use a different editor)" : "ENV['EDITOR'] not set"
+              button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0 do
+                command = %<#{ENV['EDITOR']} "#{File.join(level.player_path, @file_tabs_group.value)}">
+                $stdout.puts "SYSTEM: #{command}"
+                Thread.new { system command }
+              end
+            end
+          end
+
+          subscribe :changed do |_, value|
+            current = @file_tab_buttons.find {|elem| elem.value == value }
+            @file_tab_buttons.each {|t| t.enabled = (t != current) }
+            current.color, current.background_color = current.background_color, current.color
+
+            @file_tab_contents.clear
+            @file_tab_contents.add @file_tab_windows[value]
+          end
+        end
+
+        # Contents of those tabs.
+        @file_tab_contents = vertical padding: 0, width: 380, height: $window.height * 0.5
+
+        create_file_tab_windows
+        @file_tabs_group.value = "README"
+      end
     end
 
     def update_turn_delay
@@ -247,7 +259,41 @@ module RubyArmor
 
       @game.prepare_next_level unless profile.current_level.number > 0
 
-      # Continually poll the player code file to see when it is edited.
+      create_sync_timer
+
+      @level = profile.current_level # Need to store this because it gets forgotten by the profile/game :(
+      self.turn = 0
+      @playing = false
+      level.load_level
+
+      @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
+
+      # Initial log entry.
+      self.puts "- turn   0 -"
+      self.print floor.character.sub "@", " "
+      print "#{profile.warrior_name} climbs up to level #{level.number}\n"
+      self.print floor.character
+
+      @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
+
+      warrior = floor.units.find {|u| u.is_a? RubyWarrior::Units::Warrior }
+      @entry_x, @entry_y = warrior.position.x, warrior.position.y
+
+      @turn_slider.enabled = false
+
+      refresh_labels
+
+      # Load the player's own code, which might explode!
+      begin
+        level.load_player
+      rescue SyntaxError, StandardError => ex
+        handle_exception ex
+        return
+      end
+    end
+
+    # Continually poll the player code file to see when it is edited.
+    def create_sync_timer
       stop_timer :refresh_code
       friendly_line_endings = false
       every(100, :name => :refresh_code) do
@@ -279,42 +325,13 @@ module RubyArmor
           # This can happen if the file is busy.
         end
       end
-
-      @level = profile.current_level # Need to store this because it gets forgotten by the profile/game :(
-      self.turn = 0
-      @playing = false
-      level.load_level
-
-      @readme_display.text = replace_syntax File.read(File.join(level.player_path, "README"))
-
-      # Initial log entry.
-      self.puts "- turn #{turn} -"
-      print "#{profile.warrior_name} climbs up to level #{level.number}\n"
-      self.print floor.character
-
-      @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
-
-      warrior = floor.units.find {|u| u.is_a? RubyWarrior::Units::Warrior }
-      @entry_x, @entry_y = warrior.position.x, warrior.position.y
-
-      @turn_slider.enabled = false
-
-      refresh_labels
-
-      # Load the player's own code, which might explode!
-      begin
-        level.load_player
-      rescue SyntaxError, StandardError => ex
-        handle_exception ex
-        return
-      end
     end
 
     def refresh_labels
       @tower_label.text =  profile.tower.name.capitalize
       @level_label.text =  "Level:   #{level.number}"
-      @turn_label.text =   "Turn:   #{turn.to_s.rjust(2)}"
-      @health_label.text = "Health: #{level.warrior.health.to_s.rjust(2)}"
+      @turn_label.text =   "Turn:   #{@turn_slider.value.to_s.rjust(2)}"
+      @health_label.text = "Health: #{level.warrior ? level.warrior.health.to_s.rjust(2) : ' 0'}"
     end
 
     def start_level
@@ -360,7 +377,8 @@ module RubyArmor
 
     def play_turn
       self.turn += 1
-      self.puts "- turn #{turn} -"
+      self.puts "- turn #{turn.to_s.rjust(3)} -"
+      self.print floor.character # Before.
 
       begin
         floor.units.each(&:prepare_turn)
@@ -370,12 +388,11 @@ module RubyArmor
         return
       end
 
-      self.print floor.character
+      self.print floor.character # After
 
       level.time_bonus -= 1 if level.time_bonus > 0
 
       refresh_labels
-
 
       if level.passed?
         if @game.next_level.exists?
@@ -399,6 +416,8 @@ module RubyArmor
         self.puts "Sorry, you starved to death on level #{level.number}. Change your script and try again."
 
       end
+
+      self.puts
     end
 
     def handle_exception(exception)
