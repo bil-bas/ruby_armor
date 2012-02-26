@@ -133,7 +133,7 @@ module RubyArmor
                   # Default editor for Windows.
                   ENV['EDITOR'] = "notepad" if Gem.win_platform? and ENV['EDITOR'].nil?
 
-                  tip = ENV['EDITOR'] ? "Edit file in #{ENV['EDITOR']} (set ENV['EDITOR'] to use a different editor)" : "ENV['EDITOR'] not set"
+                  tip = ENV['EDITOR'] ? "Edit file in #{ENV['EDITOR']} (set EDITOR environment variable to use a different editor)" : "ENV['EDITOR'] not set"
                   button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0 do
                     command = %<#{ENV['EDITOR']} "#{File.join(level.player_path, @tabs_group.value)}">
                     $stdout.puts "SYSTEM: #{command}"
