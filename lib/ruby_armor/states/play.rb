@@ -123,7 +123,7 @@ module RubyArmor
 
                   tip = ENV['EDITOR'] ? "Edit file in #{ENV['EDITOR']} (set ENV['EDITOR'] to use a different editor)" : "ENV['EDITOR'] not set"
                   button "edit", tip: tip, enabled: ENV['EDITOR'], font_height: 12, border_thickness: 0 do
-                    command = %<"#{ENV['EDITOR']}" "#{File.join(level.player_path, @tabs_group.value)}">
+                    command = %<#{ENV['EDITOR']} "#{File.join(level.player_path, @tabs_group.value)}">
                     $stdout.puts "SYSTEM: #{command}"
                     Thread.new { system command }
                   end
