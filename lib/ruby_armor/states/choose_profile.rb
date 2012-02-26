@@ -65,6 +65,11 @@ module RubyArmor
       end
     end
 
+    def finalize
+      super
+      container.clear
+    end
+
     def play(profile, config)
       @game.instance_variable_set :@profile, profile
       push_game_state Play.new(@game, config)
