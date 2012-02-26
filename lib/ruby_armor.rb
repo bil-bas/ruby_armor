@@ -21,6 +21,7 @@ require "ruby_armor/sprite_sheet"
 require "ruby_armor/states/choose_profile"
 require "ruby_armor/states/play"
 require "ruby_armor/window"
+require "ruby_armor/warrior_config"
 
 ROOT_PATH = File.expand_path('../../', __FILE__)
 

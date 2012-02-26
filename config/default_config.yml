@@ -1,0 +1,5 @@
+---
+
+:description: This is the config file for RubyArmor and does not affect the game in any way if using RubyWarrior natively.
+:turn_delay: 0.5 # seconds
+:warrior_class: :valkyrie # :valkyrie, :mercenary, :monk, :burglar

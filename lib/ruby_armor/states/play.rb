@@ -15,6 +15,14 @@ module RubyArmor
         :north => 3,
     }
 
+    # Rows in the warriors.png to use for each warrior type.
+    WARRIORS = {
+        :valkyrie => 0,
+        :mercenary => 1,
+        :monk => 2,
+        :burglar => 3,
+    }
+
     ENEMY_TYPES = [
         RubyWarrior::Units::Wizard,
         RubyWarrior::Units::ThickSludge,
@@ -31,8 +39,8 @@ module RubyArmor
 
     trait :timer
 
-    def initialize(game)
-      @game = game
+    def initialize(game, config)
+      @game, @config = game, config
       super()
     end
 
@@ -86,11 +94,13 @@ module RubyArmor
             # Choose turn-duration with a slider.
             horizontal padding: 0, spacing: 0 do
               @turn_duration_label = label "", font_height: 12
-              @turn_duration_slider = slider width: 55, range: 0..1000, tip: "Turn duration (ms)" do |_, value|
-                @turn_duration = value * 0.001
+              @turn_duration_slider = slider width: 55, range: 0..1000,
+                                             tip: "Turn duration (ms)" do |_, value|
+                @config.turn_delay = value * 0.001
                 @turn_duration_label.text = "%4dms" % value.to_s
               end
-              @turn_duration_slider.value = 500
+
+              @turn_duration_slider.value = (@config.turn_delay * 1000).round
             end
           end
         end
@@ -240,7 +250,7 @@ module RubyArmor
       @reset_button.enabled = true
       @start_button.enabled = false
       @playing = true
-      @take_next_turn_at = Time.now + @turn_duration
+      @take_next_turn_at = Time.now + @config.turn_delay
       refresh_labels
     end
 
@@ -291,7 +301,7 @@ module RubyArmor
       @turn += 1
       level.time_bonus -= 1 if level.time_bonus > 0
 
-      @take_next_turn_at = Time.now + @turn_duration
+      @take_next_turn_at = Time.now + @config.turn_delay
 
       refresh_labels
 
@@ -381,7 +391,7 @@ module RubyArmor
           floor.units.each do |unit|
             sprite = case unit
                        when RubyWarrior::Units::Warrior
-                         @warrior_sprites[FACINGS[unit.position.direction], 0]
+                         @warrior_sprites[FACINGS[unit.position.direction], WARRIORS[@config.warrior_class]]
                        when RubyWarrior::Units::Wizard
                          @mob_sprites[0, 1]
                        when RubyWarrior::Units::ThickSludge
