@@ -73,6 +73,17 @@ module RubyArmor
 
       on_input(:escape) { pop_game_state }
 
+      on_input(:right_arrow) do
+        if @turn_slider.enabled? and @turn_slider.value < turn
+          @turn_slider.value += 1
+        end
+      end
+      on_input(:left_arrow) do
+        if @turn_slider.enabled? and @turn_slider.value > 0
+          @turn_slider.value -= 1
+        end
+      end
+
       vertical spacing: 10, padding: 10 do
         horizontal padding: 0, height: 260, width: 780 do
           # Space for the game graphics.
