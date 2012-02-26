@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
   s.homepage = "http://spooner.github.com/libraries/ruby_armor/"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
+  s.required_ruby_version = Gem::Requirement.new("~> 1.9.2")
   s.rubyforge_project = "ruby_armor"
   s.rubygems_version = "1.8.16"
   s.summary = "GUI interface for RubyWarrior"
@@ -24,20 +25,20 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<rubywarrior>, ["~> 0.1.2"])
       s.add_runtime_dependency(%q<gosu>, ["~> 0.7.41"])
       s.add_runtime_dependency(%q<chingu>, ["~> 0.9rc7"])
-      s.add_runtime_dependency(%q<fidgit>, ["~> 0.2.3"])
+      s.add_runtime_dependency(%q<fidgit>, ["~> 0.2.4"])
       s.add_development_dependency(%q<releasy>, ["~> 0.2.2"])
     else
       s.add_dependency(%q<rubywarrior>, ["~> 0.1.2"])
       s.add_dependency(%q<gosu>, ["~> 0.7.41"])
       s.add_dependency(%q<chingu>, ["~> 0.9rc7"])
-      s.add_dependency(%q<fidgit>, ["~> 0.2.3"])
+      s.add_dependency(%q<fidgit>, ["~> 0.2.4"])
       s.add_dependency(%q<releasy>, ["~> 0.2.2"])
     end
   else
     s.add_dependency(%q<rubywarrior>, ["~> 0.1.2"])
     s.add_dependency(%q<gosu>, ["~> 0.7.41"])
     s.add_dependency(%q<chingu>, ["~> 0.9rc7"])
-    s.add_dependency(%q<fidgit>, ["~> 0.2.3"])
+    s.add_dependency(%q<fidgit>, ["~> 0.2.4"])
     s.add_dependency(%q<releasy>, ["~> 0.2.2"])
   end
 end

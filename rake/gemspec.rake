@@ -30,12 +30,14 @@ def generate_gemspec
 
     s.executable = s.name
 
+    s.required_ruby_version = "~> 1.9.2" # Mainly because of fidgit.
+
     s.test_files = Dir["test/**/*_spec.rb"]
 
     s.add_runtime_dependency "rubywarrior", "~> 0.1.2"
     s.add_runtime_dependency "gosu", "~> 0.7.41"
     s.add_runtime_dependency "chingu", "~> 0.9rc7"
-    s.add_runtime_dependency "fidgit", "~> 0.2.3"
+    s.add_runtime_dependency "fidgit", "~> 0.2.4"
 
     s.add_development_dependency "releasy", "~> 0.2.2"
   end
