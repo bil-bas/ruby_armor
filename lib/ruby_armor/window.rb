@@ -5,7 +5,7 @@ module RubyArmor
 
       Gosu::enable_undocumented_retrofication
 
-      self.caption = "RubyArmor for RubyWarrior"
+      self.caption = "RubyArmor v#{RubyArmor::VERSION} (for RubyWarrior)"
       push_game_state ChooseProfile
     end
   end
