@@ -50,7 +50,6 @@ module RubyArmor
     attr_reader :turn
     def turn=(turn)
       @turn = turn
-      @turn_slider.value = @turn
       @take_next_turn_at = Time.now + @config.turn_delay
       @log_contents["current turn"].text = replace_log @turn_logs[turn]
 
@@ -350,12 +349,15 @@ module RubyArmor
       end
     end
 
+    def effective_turn
+      @turn_slider.enabled? ? @turn_slider.value : @turn
+    end
+
     def refresh_labels
-      turn_to_display = @turn_slider.value
       @tower_label.text =  profile.tower.name.capitalize
       @level_label.text =  "Level:   #{level.number}"
-      @turn_label.text =   "Turn:   #{turn_to_display.to_s.rjust(2)}"
-      @health_label.text = "Health: #{@health[turn_to_display].to_s.rjust(2)}"
+      @turn_label.text =   "Turn:   #{effective_turn.to_s.rjust(2)}"
+      @health_label.text = "Health: #{@health[effective_turn].to_s.rjust(2)}"
     end
 
     def start_level
@@ -445,21 +447,27 @@ module RubyArmor
         end
 
         level.tally_points
-        @turn_slider.enabled = true
+        level_ended
 
       elsif level.failed?
-        @hint_button.enabled = true
-        @turn_slider.enabled = true
+        level_ended
         self.puts "Sorry, you failed level #{level.number}. Change your script and try again."
 
       elsif out_of_time?
-        @hint_button.enabled = true
-        @turn_slider.enabled = true
+        level_ended
         self.puts "Sorry, you starved to death on level #{level.number}. Change your script and try again."
 
       end
 
       self.puts
+    end
+
+    # Not necessarily complete; just finished.
+    def level_ended
+      @hint_button.enabled = true
+      @turn_slider.enabled = true
+      @turn_slider.instance_variable_set :@range, 0..turn
+      @turn_slider.value = turn
     end
 
     def handle_exception(exception)
@@ -540,7 +548,7 @@ module RubyArmor
     end
 
     def draw_units
-      @units_record[@turn_slider.value] ||= $window.record 1, 1 do
+      @units_record[effective_turn] ||= $window.record 1, 1 do
         floor.units.sort_by {|u| u.position.y }.each do |unit|
           sprite = case unit
                      when RubyWarrior::Units::Warrior
@@ -569,7 +577,7 @@ module RubyArmor
         end
       end
 
-      @units_record[@turn_slider.value].draw 0, 0, 0
+      @units_record[effective_turn].draw 0, 0, 0
     end
 
     def unit_health_changed(unit, amount)
@@ -583,10 +591,6 @@ module RubyArmor
 
     def update
       super
-
-      if @turn_slider.value > turn
-        @turn_slider.value = turn
-      end
 
       if @playing and Time.now >= @take_next_turn_at and not (level.passed? || level.failed? || out_of_time? || @exception)
         play_turn
