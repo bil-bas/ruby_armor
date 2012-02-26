@@ -263,7 +263,7 @@ module RubyArmor
     def refresh_labels
       @tower_label.text =  profile.tower.name.capitalize
       @level_label.text =  "Level:   #{level.number}"
-      @turn_label.text =   "Turn:   #{(@turn + 1).to_s.rjust(2)}"
+      @turn_label.text =   "Turn:   #{@turn.to_s.rjust(2)}"
       @health_label.text = "Health: #{level.warrior.health.to_s.rjust(2)}"
     end
 
