@@ -36,7 +36,7 @@ module RubyArmor
         # Option to create a new profile.
         vertical padding: 0, align: :center do
           horizontal align: :center, padding: 0 do
-            @new_name = text_area width: 300, max_height: 60, font_height: 24 do |_, text|
+            @new_name = text_area width: 300, height: 35, font_height: 24 do |_, text|
               duplicate = @game.profiles.any? {|p| p.warrior_name.downcase == text.downcase }
               @new_profile_button.enabled = !(text.empty? or duplicate)
             end
