@@ -7,6 +7,12 @@ module RubyArmor
     SPRITE_OFFSET_X, SPRITE_OFFSET_Y = 64, 64
     SPRITE_SCALE = 5
 
+    MAX_TURN_DELAY = 1
+    MIN_TURN_DELAY = 0
+    TURN_DELAY_STEP = 0.1
+
+    SHORTCUT_COLOR = Color.rgb(175, 255, 100)
+
     # Sprites to show based on player facing.
     FACINGS = {
         :east => 0,
@@ -73,7 +79,7 @@ module RubyArmor
                 :width => 70,
                 :justify => :center,
                 shortcut: :auto,
-                shortcut_color: Color.rgb(150, 255, 0),
+                shortcut_color: SHORTCUT_COLOR,
                 border_thickness: 0,
             }
             @start_button = button "Start", button_options.merge(tip: "Start running player.rb in this level") do
@@ -94,15 +100,21 @@ module RubyArmor
             end
 
             # Choose turn-duration with a slider.
-            horizontal padding: 0, spacing: 0 do
-              @turn_duration_label = label "", font_height: 12
-              @turn_duration_slider = slider width: 55, range: 0..1000,
-                                             tip: "Turn duration (ms)" do |_, value|
-                @config.turn_delay = value * 0.001
-                @turn_duration_label.text = "%4dms" % value.to_s
+            horizontal padding: 0, spacing: 21 do
+              button_options = { padding: 4, border_thickness: 0, shortcut: :auto, shortcut_color: SHORTCUT_COLOR }
+              @turn_slower_button = button "-", button_options.merge(tip: "Make turns run slower") do
+                @config.turn_delay = [@config.turn_delay + TURN_DELAY_STEP, MAX_TURN_DELAY].min if @config.turn_delay < MAX_TURN_DELAY
+                update_turn_delay
               end
 
-              @turn_duration_slider.value = (@config.turn_delay * 1000).round
+              @turn_duration_label = label "", tip: "Speed of turns (high is faster)", align: :center
+
+              @turn_faster_button = button "+", button_options.merge(tip: "Make turns run faster") do
+                @config.turn_delay = [@config.turn_delay - TURN_DELAY_STEP, MIN_TURN_DELAY].max if @config.turn_delay > MIN_TURN_DELAY
+                update_turn_delay
+              end
+
+              update_turn_delay
             end
           end
         end
@@ -158,6 +170,12 @@ module RubyArmor
       end
 
       prepare_level
+    end
+
+    def update_turn_delay
+      @turn_duration_label.text = "%2d" % [(MAX_TURN_DELAY / TURN_DELAY_STEP) + 1 - (@config.turn_delay / TURN_DELAY_STEP)]
+      @turn_slower_button.enabled = @config.turn_delay < MAX_TURN_DELAY
+      @turn_faster_button.enabled = @config.turn_delay > MIN_TURN_DELAY
     end
 
     def create_tab_windows
