@@ -12,7 +12,7 @@ module RubyArmor
 
       vertical align_h: :center, spacing: 30 do
         vertical align: :center, padding_top: 30, padding: 0 do
-          label "ryanb's RubyWarrior is wearing Spooner's", font_height: 12
+          label "ryanb's RubyWarrior is wearing Spooner's", align: :center, font_height: 12
           label "RubyArmor", align: :center, font_height: 80
         end
 

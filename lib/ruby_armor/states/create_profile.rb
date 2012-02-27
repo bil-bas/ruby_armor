@@ -7,6 +7,11 @@ module RubyArmor
 
       super shadow_full: true
 
+      on_input :escape, :hide
+      on_input [:return, :enter] do
+        @new_profile_button.activate if @new_profile_button.enabled?
+      end
+
       # Option to create a new profile.
       vertical align: :center, border_thickness: 4, background_color: Color::BLACK do
         label "Create new profile", font_height: 20
@@ -31,7 +36,7 @@ module RubyArmor
             hide
           end
 
-          @new_profile_button = button "New", justify: :center, tip: "Create a new profile" do
+          @new_profile_button = button "Create", justify: :center, tip: "Create a new profile" do
             play *new_profile(@new_name.text)
           end
         end
