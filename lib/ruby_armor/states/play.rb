@@ -189,7 +189,7 @@ module RubyArmor
 
     def save_player_code
       # Save the code used to complete the level for posterity.
-      File.open File.join(profile.player_path, "ruby_armor/player_#{profile.epic? ? "EPIC" : level.number.to_s.rjust(2, '0')}.rb"), "w" do |file|
+      File.open File.join(profile.player_path, "ruby_armor/player_#{profile.epic? ? "EPIC" : level.number.to_s.rjust(3, '0')}.rb"), "w" do |file|
         file.puts @loaded_code
 
         file.puts

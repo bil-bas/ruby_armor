@@ -4,7 +4,7 @@ module RubyArmor
 
     class << self
       def path_for_level(profile, level)
-        File.join(profile.player_path, "ruby_armor/player_#{level.is_a?(Symbol) ? level : level.to_s.rjust(2, '0')}.rb")
+        File.join(profile.player_path, "ruby_armor/player_#{level.is_a?(Symbol) ? level : level.to_s.rjust(3, '0')}.rb")
       end
 
       # Check if there are levels saved that can be recalled.
