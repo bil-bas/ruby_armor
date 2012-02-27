@@ -1,22 +1,20 @@
 module RubyArmor
   class ChooseProfile < Fidgit::GuiState
-    DEFAULT_WARRIOR_CLASS = :valkyrie
-
     def setup
       super
+
+      on_input :escape, :hide
 
       # Create the game.
       @game = RubyWarrior::Game.new
 
       warrior_sprites = SpriteSheet.new "warriors.png", Play::SPRITE_WIDTH, Play::SPRITE_HEIGHT, 4
 
-      vertical align_h: :center, spacing: 40 do
-        vertical align: :center, padding: 0 do
-          label "RubyArmor", align: :center, font_height: 80, padding_top: 50
-          label "by Spooner", align: :center, font_height: 12
+      vertical align_h: :center, spacing: 30 do
+        vertical align: :center, padding_top: 30, padding: 0 do
+          label "ryanb's RubyWarrior is wearing Spooner's", font_height: 12
+          label "RubyArmor", align: :center, font_height: 80
         end
-
-        button_options = { width: 400, align: :center, justify: :center }
 
         # Use existing profile.
         vertical padding: 0, align_h: :center do
@@ -29,8 +27,8 @@ module RubyArmor
               tip = "Play as #{profile.warrior_name} the #{config.warrior_class.capitalize} - #{profile.tower.name} - level #{name_of_level} - score #{profile.score}"
 
               # Can be disabled because of a bug in RubyWarrior paths.
-              button title, button_options.merge(tip: tip, enabled: File.directory?(profile.tower_path),
-                                                 icon: warrior_sprites[0, Play::WARRIORS[config.warrior_class]], icon_options: { factor: 2 }) do
+              button title, width: 400, tip: tip, enabled: File.directory?(profile.tower_path),
+                            icon: warrior_sprites[0, Play::WARRIORS[config.warrior_class]], icon_options: { factor: 2 } do
                 play profile, config
               end
             end
@@ -38,40 +36,16 @@ module RubyArmor
         end
 
         # Option to create a new profile.
-        vertical padding: 0, align: :center do
-          horizontal align: :center, padding: 0 do
-            @new_name = text_area width: 300, height: 30, font_height: 20 do |_, text|
-              duplicate = @game.profiles.any? {|p| p.warrior_name.downcase == text.downcase }
-              @new_profile_button.enabled = !(text.empty? or duplicate)
-            end
-
-            @new_profile_button = button "New", button_options.merge(width: 90, tip: "Create a new profile") do
-              play *new_profile(@new_name.text)
-            end
-
-            new_name = File.basename File.expand_path("~")
-            new_name = "Player" if new_name.empty?
-            @new_name.text = new_name
+        horizontal align: :center do
+          button "Create new profile", shortcut: :auto, shortcut_color: Play::SHORTCUT_COLOR do
+            CreateProfile.new(@game, warrior_sprites).show
           end
 
-          # Choose class; just cosmetic.
-          @warrior_class = group align_h: :center do
-            horizontal padding: 0, align_h: :center do
-              Play::WARRIORS.each do |warrior, row|
-                radio_button "", warrior, tip: "Play as a #{warrior.capitalize} (The difference between classes is purely cosmetic!)",
-                             :icon => warrior_sprites[0, row], :icon_options => { :factor => 4 }
-              end
-            end
+          button "Exit", shortcut: :x, shortcut_color: Play::SHORTCUT_COLOR do
+            exit!
           end
-
-          @warrior_class.value = DEFAULT_WARRIOR_CLASS
         end
       end
-    end
-
-    def update
-      super
-      @new_name.focus self unless @new_name.focused?
     end
 
     def finalize
@@ -82,17 +56,6 @@ module RubyArmor
     def play(profile, config)
       @game.instance_variable_set :@profile, profile
       push_game_state Play.new(@game, config)
-    end
-
-    def new_profile(name)
-      new_profile = RubyWarrior::Profile.new
-      new_profile.tower_path = @game.towers[0].path
-      new_profile.warrior_name = name
-
-      config = WarriorConfig.new new_profile
-      config.warrior_class = @warrior_class.value
-
-      [new_profile, config]
     end
   end
 end

@@ -20,6 +20,7 @@ require "ruby_armor/ruby_warrior_ext/abilities/rest"
 
 require "ruby_armor/floating_text"
 require "ruby_armor/sprite_sheet"
+require "ruby_armor/states/create_profile"
 require "ruby_armor/states/choose_profile"
 require "ruby_armor/states/play"
 require "ruby_armor/states/review_code"

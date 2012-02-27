@@ -16,9 +16,11 @@ module RubyArmor
     def initialize(profile)
       super(shadow_full: true)
 
+      on_input :escape, :hide
+
       @profile = profile
 
-      vertical spacing: 10, align: :center, background_color: Color::BLACK do
+      vertical spacing: 10, align: :center, border_thickness: 4, background_color: Color::BLACK do
         label "Reviewing code that completed levels in #{profile.tower.name} tower", font_height: 20
 
         @tab_group = group do
@@ -57,7 +59,7 @@ module RubyArmor
           end
         end
 
-        button "Close", shortcut: :escape, align_h: :center, border_thickness: 0 do
+        button "Close", shortcut: :auto, shortcut_color: Play::SHORTCUT_COLOR, align_h: :center, border_thickness: 0 do
           hide
         end
 
