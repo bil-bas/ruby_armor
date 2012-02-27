@@ -90,7 +90,7 @@ module RubyArmor
           create_ui_bar
         end
 
-        @turn_slider = slider width: 780, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn" do |_, turn|
+        @turn_slider = slider width: 774, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn" do |_, turn|
           @log_contents["current turn"].text = replace_log @turn_logs[turn]
           refresh_labels
         end
@@ -102,6 +102,21 @@ module RubyArmor
         end
       end
 
+      # Return to normal mode if extra levels have been added.
+      if profile.epic?
+        if profile.level_after_epic?
+          # TODO: do something with log.
+          log = record_log do
+            @game.go_back_to_normal_mode
+          end
+        else
+          # TODO: do something with log.
+          log = record_log do
+            @game.play_epic_mode
+          end
+        end
+      end
+
       prepare_level
     end
 
@@ -109,7 +124,7 @@ module RubyArmor
       vertical padding: 0, height: 260, width: 100, spacing: 6 do
         # Labels at top-right.
         @tower_label = label "", tip: "Each tower has a different difficulty level"
-        @level_label = label "Level:", tip: "Each tower contains 9 levels"
+        @level_label = label "Level:"
         @turn_label = label "Turn:", tip: "Current turn; starvation at #{MAX_TURNS} to avoid endless games"
         @health_label = label "Health:", tip: "The warrior's remaining health; death occurs at 0"
 
@@ -126,6 +141,7 @@ module RubyArmor
         end
 
         @reset_button = button "Reset", button_options.merge(tip: "Restart the level") do
+          profile.level_number = 0 if profile.epic?
           prepare_level
         end
 
@@ -135,11 +151,35 @@ module RubyArmor
 
         @continue_button = button "Continue", button_options.merge(tip: "Climb up the stairs to the next level") do
           # Save the code used to complete the level for posterity.
-          File.open File.join(profile.player_path, "ruby_armor/player_#{level.number.to_s.rjust(2, '0')}.rb"), "w" do |file|
+          File.open File.join(profile.player_path, "ruby_armor/player_#{profile.epic? ? "EPIC" : level.number.to_s.rjust(2, '0')}.rb"), "w" do |file|
             file.puts @loaded_code
+
+            file.puts
+            file.puts
+            file.puts "#" * 40
+            file.puts "=begin"
+            file.puts
+            file.puts record_log { level.tally_points }
+            file.puts
+
+            if profile.epic? and @game.final_report
+              file.puts @game.final_report
+            else
+              file.puts "Completed in #{turn} turns."
+            end
+
+            file.puts
+            file.puts "=end"
+            file.puts "#" * 40
           end
+
           # Move to next level.
-          @game.prepare_next_level
+          if @game.next_level.exists?
+            @game.prepare_next_level
+          else
+            @game.prepare_epic_mode
+          end
+
           prepare_level
         end
 
@@ -162,7 +202,7 @@ module RubyArmor
 
         # Review old level code.
         @review_button = button "Review", button_options.merge(tip: "Review code used for each level",
-                                enabled: false, border_thickness: 0) do
+                                enabled: false, border_thickness: 0, shortcut: :v) do
           ReviewCode.new(profile).show
         end
       end
@@ -208,7 +248,7 @@ module RubyArmor
         @file_tabs_group = group do
           @file_tab_buttons = horizontal padding: 0, spacing: 4 do
             %w[README player.rb].each do |name|
-              radio_button(name.to_s, name, border_thickness: 0, tip: "View #{name}")
+              radio_button(name.to_s, name, border_thickness: 0, tip: "View #{File.join profile.player_path, name}")
             end
 
             horizontal padding_left: 50, padding: 0 do
@@ -276,7 +316,7 @@ module RubyArmor
     def prepare_level
       @recorded_log = nil # Not initially logging.
 
-      @log_contents["full log"].text = ""
+      @log_contents["full log"].text = "" #unless profile.epic? # TODO: Might need to avoid this, since it could get REALLY long.
       @continue_button.enabled = false
       @hint_button.enabled = false
       @reset_button.enabled = false
@@ -284,7 +324,16 @@ module RubyArmor
 
       @exception = nil
 
-      @game.prepare_next_level unless profile.current_level.number > 0
+      if profile.current_level.number.zero?
+        if profile.epic?
+          @game.prepare_epic_mode
+          profile.level_number += 1
+          profile.current_epic_score = 0
+          profile.current_epic_grades = {}
+        else
+          @game.prepare_next_level 
+        end
+      end
 
       create_sync_timer
 
@@ -306,7 +355,8 @@ module RubyArmor
       # Initial log entry.
       self.puts "- turn   0 -"
       self.print floor.character
-      print "#{profile.warrior_name} climbs up to level #{level.number}\n"
+      self.print "#{profile.warrior_name} climbs up to level #{level.number}\n"
+      @log_contents["full log"].text += @log_contents["current turn"].text
 
       @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
 
@@ -375,7 +425,8 @@ module RubyArmor
 
     def refresh_labels
       @tower_label.text =  profile.tower.name.capitalize
-      @level_label.text =  "Level:   #{level.number}"
+      @level_label.text =  "Level:  #{profile.epic? ? "E" : " "}#{level.number}"
+      @level_label.tip = profile.epic? ? "Playing in EPIC mode" : "Playing in normal mode"
       @turn_label.text =   "Turn:   #{effective_turn.to_s.rjust(2)}"
       @health_label.text = "Health: #{@health[effective_turn].to_s.rjust(2)}"
     end
@@ -459,14 +510,31 @@ module RubyArmor
       refresh_labels
 
       if level.passed?
-        if @game.next_level.exists?
-          @continue_button.enabled = true
+        @continue_button.enabled = true unless profile.epic?
+
+        if profile.next_level.exists?
           self.puts "Success! You have found the stairs."
+          level.tally_points
+
+          if profile.epic?
+            # Start the next level immediately.
+            self.puts "\n#{"-" * 25}\n"
+
+            # Rush onto the next level immediately!
+            profile.level_number += 1
+            prepare_level
+            start_level
+          end
         else
           self.puts "CONGRATULATIONS! You have climbed to the top of the tower and rescued the fair maiden Ruby."
+          level.tally_points
+
+          if profile.epic?
+            self.puts @game.final_report if @game.final_report
+            profile.save
+          end
         end
 
-        level.tally_points
         level_ended
 
       elsif level.failed?
@@ -488,6 +556,8 @@ module RubyArmor
 
     # Not necessarily complete; just finished.
     def level_ended
+      return if profile.epic?
+
       @hint_button.enabled = true
       @turn_slider.enabled = true
       @turn_slider.instance_variable_set :@range, 0..turn
@@ -605,6 +675,8 @@ module RubyArmor
     end
 
     def unit_health_changed(unit, amount)
+      return unless @level_offset_x # Ignore changes out of order, such as between epic levels.
+
       color = (amount > 0) ? Color::GREEN : Color::RED
       y_offset = (amount > 0) ? -0.15 : +0.15
       FloatingText.create "#{amount > 0 ? "+" : ""}#{amount}",

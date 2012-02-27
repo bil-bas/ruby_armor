@@ -24,8 +24,9 @@ module RubyArmor
             @game.profiles.each do |profile|
               config = WarriorConfig.new profile
 
-              title = "#{profile.warrior_name.ljust(20)} #{profile.tower.name.rjust(12)}:#{profile.level_number} #{profile.score.to_s.rjust(5)}"
-              tip = "Play as #{profile.warrior_name} the #{config.warrior_class.capitalize} - #{profile.tower.name} - level #{profile.level_number} - score #{profile.score}"
+              name_of_level = profile.epic? ? "EPIC" : profile.level_number.to_s
+              title = "#{profile.warrior_name.ljust(20)} #{profile.tower.name.rjust(12)}:#{name_of_level[0, 1]} #{profile.score.to_s.rjust(5)}"
+              tip = "Play as #{profile.warrior_name} the #{config.warrior_class.capitalize} - #{profile.tower.name} - level #{name_of_level} - score #{profile.score}"
 
               # Can be disabled because of a bug in RubyWarrior paths.
               button title, button_options.merge(tip: tip, enabled: File.directory?(profile.tower_path),
