@@ -150,28 +150,7 @@ module RubyArmor
         end
 
         @continue_button = button "Continue", button_options.merge(tip: "Climb up the stairs to the next level") do
-          # Save the code used to complete the level for posterity.
-          File.open File.join(profile.player_path, "ruby_armor/player_#{profile.epic? ? "EPIC" : level.number.to_s.rjust(2, '0')}.rb"), "w" do |file|
-            file.puts @loaded_code
-
-            file.puts
-            file.puts
-            file.puts "#" * 40
-            file.puts "=begin"
-            file.puts
-            file.puts record_log { level.tally_points }
-            file.puts
-
-            if profile.epic? and @game.final_report
-              file.puts @game.final_report
-            else
-              file.puts "Completed in #{turn} turns."
-            end
-
-            file.puts
-            file.puts "=end"
-            file.puts "#" * 40
-          end
+          save_player_code
 
           # Move to next level.
           if @game.next_level.exists?
@@ -205,6 +184,31 @@ module RubyArmor
                                 enabled: false, border_thickness: 0, shortcut: :v) do
           ReviewCode.new(profile).show
         end
+      end
+    end
+
+    def save_player_code
+      # Save the code used to complete the level for posterity.
+      File.open File.join(profile.player_path, "ruby_armor/player_#{profile.epic? ? "EPIC" : level.number.to_s.rjust(2, '0')}.rb"), "w" do |file|
+        file.puts @loaded_code
+
+        file.puts
+        file.puts
+        file.puts "#" * 40
+        file.puts "=begin"
+        file.puts
+        file.puts record_log { level.tally_points }
+        file.puts
+
+        if profile.epic? and @game.final_report
+          file.puts @game.final_report
+        else
+          file.puts "Completed in #{turn} turns."
+        end
+
+        file.puts
+        file.puts "=end"
+        file.puts "#" * 40
       end
     end
 
@@ -510,7 +514,8 @@ module RubyArmor
       refresh_labels
 
       if level.passed?
-        @continue_button.enabled = true unless profile.epic?
+        @reset_button.enabled = false if profile.epic? # Continue will save performance; reset won't.
+        @continue_button.enabled = true
 
         if profile.next_level.exists?
           self.puts "Success! You have found the stairs."
