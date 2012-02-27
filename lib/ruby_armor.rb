@@ -15,6 +15,7 @@ require "ruby_armor/version"
 
 require "ruby_armor/ruby_warrior_ext/position"
 require "ruby_armor/ruby_warrior_ext/ui"
+require "ruby_armor/ruby_warrior_ext/player_generator"
 require "ruby_armor/ruby_warrior_ext/units/base"
 require "ruby_armor/ruby_warrior_ext/abilities/rest"
 

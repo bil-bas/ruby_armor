@@ -14,6 +14,8 @@ module RubyArmor
 
     SHORTCUT_COLOR = Color.rgb(175, 255, 100)
 
+    FILE_SYNC_DELAY = 0.5 # 2 polls per second.
+
     # Sprites to show based on player facing.
     FACINGS = {
         :east => 0,
@@ -392,7 +394,8 @@ module RubyArmor
     def create_sync_timer
       stop_timer :refresh_code
       friendly_line_endings = false
-      every(100, :name => :refresh_code) do
+
+      every(FILE_SYNC_DELAY * 1000, :name => :refresh_code) do
         begin
           player_file = File.join level.player_path, "player.rb"
           player_code = File.read player_file
@@ -400,18 +403,6 @@ module RubyArmor
           @loaded_code ||= ""
           unless @loaded_code == stripped_code
             $stdout.puts "Detected change in player.rb"
-
-            # Rewrite file as Windows text file if it is the default (a unix file).
-            # If the file loaded in binary == the code loaded as text, then the file
-            # must have Unix endings (\n => same as a text file in memory) rather than
-            # Windows endings (\r\n => different than text file in memory).
-            if !friendly_line_endings and Gem.win_platform? and
-                (File.open(player_file, "rb", &:read).strip == stripped_code)
-
-              File.open(player_file, "w") {|f| f.puts player_code }
-              $stdout.puts "Converted to Windows line endings: #{player_file}"
-            end
-            friendly_line_endings = true # Either will have or don't need to.
 
             @file_contents["player.rb"].text = stripped_code
             @loaded_code = stripped_code
@@ -514,6 +505,7 @@ module RubyArmor
       refresh_labels
 
       if level.passed?
+        stop_timer :refresh_code # Don't sync after successful completion, unless reset.
         @reset_button.enabled = false if profile.epic? # Continue will save performance; reset won't.
         @continue_button.enabled = true
 
