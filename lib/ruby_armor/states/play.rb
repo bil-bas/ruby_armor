@@ -614,7 +614,12 @@ module RubyArmor
           draw_map
 
           # Draw stairs (exit)
-          @tiles[2, @tile_set].draw floor.stairs_location[0] * SPRITE_WIDTH, floor.stairs_location[1] * SPRITE_HEIGHT, 0
+          if floor.stairs_location[0] == 0
+            # flip when on the left hand side.
+            @tiles[2, @tile_set].draw (floor.stairs_location[0] + 1) * SPRITE_WIDTH, floor.stairs_location[1] * SPRITE_HEIGHT, 0, -1
+          else
+            @tiles[2, @tile_set].draw floor.stairs_location[0] * SPRITE_WIDTH, floor.stairs_location[1] * SPRITE_HEIGHT, 0
+          end
 
           # Draw trapdoor (entrance)
           @tiles[6, @tile_set].draw @entry_x * SPRITE_WIDTH, @entry_y * SPRITE_HEIGHT, 0
