@@ -106,7 +106,7 @@ module RubyArmor
     end
 
     def create_ui_bar
-      vertical padding: 0, height: 260, width: 100 do
+      vertical padding: 0, height: 260, width: 100, spacing: 6 do
         # Labels at top-right.
         @tower_label = label "", tip: "Each tower has a different difficulty level"
         @level_label = label "Level:", tip: "Each tower contains 9 levels"
@@ -144,20 +144,26 @@ module RubyArmor
         end
 
         horizontal padding: 0, spacing: 21 do
-          button_options = { padding: 4, border_thickness: 0, shortcut: :auto, shortcut_color: SHORTCUT_COLOR }
-          @turn_slower_button = button "-", button_options.merge(tip: "Make turns run slower") do
+          options = { padding: 4, border_thickness: 0, shortcut: :auto, shortcut_color: SHORTCUT_COLOR }
+          @turn_slower_button = button "-", options.merge(tip: "Make turns run slower") do
             @config.turn_delay = [@config.turn_delay + TURN_DELAY_STEP, MAX_TURN_DELAY].min if @config.turn_delay < MAX_TURN_DELAY
             update_turn_delay
           end
 
           @turn_duration_label = label "", align: :center
 
-          @turn_faster_button = button "+", button_options.merge(tip: "Make turns run faster") do
+          @turn_faster_button = button "+", options.merge(tip: "Make turns run faster") do
             @config.turn_delay = [@config.turn_delay - TURN_DELAY_STEP, MIN_TURN_DELAY].max if @config.turn_delay > MIN_TURN_DELAY
             update_turn_delay
           end
 
           update_turn_delay
+        end
+
+        # Review old level code.
+        @review_button = button "Review", button_options.merge(tip: "Review code used for each level",
+                                enabled: false, border_thickness: 0) do
+          ReviewCode.new(profile).show
         end
       end
     end
@@ -290,6 +296,8 @@ module RubyArmor
       @turn_logs = Hash.new {|h, k| h[k] = "" }
       @units_record = Array.new
       @health = [level.warrior.health]
+
+      @review_button.enabled = ReviewCode.saved_levels? profile # Can't review code unless some has been saved.
 
       self.turn = 0
 
