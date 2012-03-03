@@ -668,16 +668,32 @@ module RubyArmor
                        raise "unknown unit: #{unit.class}"
                    end
 
-          sprite.draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
+          # Draw unit itself
+          x, y, z_order = unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
+          sprite.draw x, y, z_order
 
+          # Draw health number
+          $window.scale 0.25 do
+            Font[12].draw unit.health, x * 4, y * 4 - 20, z_order
+          end
+
+          # Draw health-bar (black border, with red bar).
+          draw_rect x, y - 2, SPRITE_WIDTH, 1, z_order, Color::BLACK
+          draw_rect x + HEALTH_BAR_BORDER, y + HEALTH_BAR_BORDER - 2,
+                    (SPRITE_WIDTH - 1) * unit.health / unit.max_health + HEALTH_BAR_BORDER * 2, 1 - HEALTH_BAR_BORDER * 2,
+                    z_order, Color::RED
+
+          # Draw binding rope if if it tied up.
           if unit.bound?
-            @mob_sprites[2, 2].draw unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, 0
+            @mob_sprites[2, 2].draw x, y, z_order
           end
         end
       end
 
       @units_record[effective_turn].draw 0, 0, 0
     end
+
+    HEALTH_BAR_BORDER = 0.25
 
     def unit_health_changed(unit, amount)
       return unless @level_offset_x # Ignore changes out of order, such as between epic levels.
