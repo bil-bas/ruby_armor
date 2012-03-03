@@ -393,24 +393,27 @@ module RubyArmor
     # Continually poll the player code file to see when it is edited.
     def create_sync_timer
       stop_timer :refresh_code
-      friendly_line_endings = false
 
       every(FILE_SYNC_DELAY * 1000, :name => :refresh_code) do
-        begin
-          player_file = File.join level.player_path, "player.rb"
-          player_code = File.read player_file
-          stripped_code = player_code.strip
-          @loaded_code ||= ""
-          unless @loaded_code == stripped_code
-            $stdout.puts "Detected change in player.rb"
+        sync_player_file
+      end
+    end
 
-            @file_contents["player.rb"].text = stripped_code
-            @loaded_code = stripped_code
-            prepare_level
-          end
-        rescue Errno::ENOENT
-          # This can happen if the file is busy.
+    def sync_player_file
+      begin
+        player_file = File.join level.player_path, "player.rb"
+        player_code = File.read player_file
+        stripped_code = player_code.strip
+        @loaded_code ||= ""
+        unless @loaded_code == stripped_code
+          $stdout.puts "Detected change in player.rb"
+
+          @file_contents["player.rb"].text = stripped_code
+          @loaded_code = stripped_code
+          prepare_level
         end
+      rescue Errno::ENOENT
+        # This can happen if the file is busy.
       end
     end
 
