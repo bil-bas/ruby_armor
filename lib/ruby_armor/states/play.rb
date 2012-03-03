@@ -356,11 +356,10 @@ module RubyArmor
 
       self.turn = 0
 
-      @file_contents["README"].text = replace_syntax File.read(File.join(level.player_path, "README"))
+      generate_readme
 
       # Initial log entry.
       self.puts "- turn   0 -"
-      self.print floor.character
       self.print "#{profile.warrior_name} climbs up to level #{level.number}\n"
       @log_contents["full log"].text += @log_contents["current turn"].text
 
@@ -388,6 +387,22 @@ module RubyArmor
         handle_exception ex
         return
       end
+    end
+
+    def generate_readme
+      readme = <<END
+#{level.description}
+
+Tip: #{level.tip}
+
+Warrior Abilities:
+END
+      level.warrior.abilities.each do |name, ability|
+        readme << "  warrior.#{name}\n"
+        readme << "    #{ability.description}\n\n"
+      end
+
+      @file_contents["README"].text = replace_syntax readme
     end
 
     # Continually poll the player code file to see when it is edited.
@@ -494,7 +509,6 @@ module RubyArmor
           floor.units.each(&:perform_turn)
         end
 
-        self.print floor.character # State after
         self.print actions
       rescue => ex
         handle_exception ex
