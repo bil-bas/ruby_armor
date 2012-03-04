@@ -72,6 +72,7 @@ module RubyArmor
 
         @turn_slider = slider width: 774, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn" do |_, turn|
           @log_contents["current turn"].text = replace_log @turn_logs[turn]
+          @dungeon_view.turn = turn
           refresh_labels
         end
 
@@ -470,8 +471,7 @@ END
     end
 
     def play_turn
-      self.turn += 1
-      self.puts "- turn #{turn.to_s.rjust(3)} -"
+      self.puts "- turn #{(turn + 1).to_s.rjust(3)} -"
 
       begin
         actions = record_log do
@@ -484,6 +484,8 @@ END
         handle_exception ex
         return
       end
+
+      self.turn += 1
 
       @health[turn] = level.warrior.health # Record health for later playback.
 

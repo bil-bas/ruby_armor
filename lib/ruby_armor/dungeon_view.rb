@@ -34,6 +34,7 @@ module RubyArmor
       @mob_sprites = SpriteSheet.new "mobs.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
 
       @units_record = Array.new
+      @turn = @tile_set = 0
     end
 
     def floor=(floor)
@@ -47,9 +48,27 @@ module RubyArmor
       level_height = floor.height * SPRITE_SCALE * SPRITE_HEIGHT
 
       @level_offset_x = (width - level_width) / 2
-      @level_offset_y =  (height - level_height) / 2
+      @level_offset_y = (height - level_height) / 2
+
+      @tips = Hash.new
 
       @floor
+    end
+
+    def turn=(turn)
+      @turn = turn
+
+      # Record tips for each tile for this turn, but not if we are revisiting it.
+      unless @tips[turn]
+        @tips[turn] = {}
+        floor.width.times do |x|
+          floor.height.times do |y|
+            @tips[turn][[x, y]] = tip_for_tile x, y
+          end
+        end
+      end
+
+      @turn
     end
 
     def draw
@@ -164,8 +183,52 @@ module RubyArmor
                           :y => (unit.position.y + y_offset) * SPRITE_SCALE * SPRITE_HEIGHT + @level_offset_y
     end
 
+    # Tip is the unit/object under the cursor ON displayed turn.
     def tip
-      "frog"
+      # Find out the grid location of the cursor.
+      cursor = $window.current_game_state.cursor
+      x = (cursor.x - @level_offset_x) / (SPRITE_SCALE * SPRITE_WIDTH)
+      y = (cursor.y - @level_offset_y) / (SPRITE_SCALE * SPRITE_HEIGHT)
+      x, y = x.floor, y.floor
+
+      if x == -1 or x == floor.width or y == -1 or y == floor.height
+        "Wall"
+      else
+        @tips[@turn][[x, y]]
+      end
+    end
+
+    # Tip for the tile at x, y.
+    def tip_for_tile(x, y)
+      # Check if the mouse is over a unit.
+      unit = floor.units.find {|u| u.position.x == x and u.position.y == y }
+
+      unit_str = if unit
+                   "#{unit.to_s} (#{unit.health} / #{unit.max_health} health)"
+                 else
+                   nil
+                 end
+
+      unit_str += " (bound)" if unit and unit.bound?
+
+      location_str = case [x, y]
+                       when floor.stairs_location
+                         "Stairs (level exit) "
+                       when [@entry_x, @entry_y]
+                         "Trapdoor (level entry) "
+                       else
+                         nil
+                     end
+
+      if unit_str and location_str
+        "#{unit_str} on #{location_str}"
+      elsif unit_str
+        unit_str
+      elsif location_str
+        location_str
+      else
+        nil
+      end
     end
   end
 end
