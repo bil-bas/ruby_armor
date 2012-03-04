@@ -8,7 +8,7 @@ module RubyArmor
       # Create the game.
       @game = RubyWarrior::Game.new
 
-      warrior_sprites = SpriteSheet.new "warriors.png", Play::SPRITE_WIDTH, Play::SPRITE_HEIGHT, 4
+      warrior_sprites = SpriteSheet.new "warriors.png", DungeonView::SPRITE_WIDTH, DungeonView::SPRITE_HEIGHT, 4
 
       vertical align_h: :center, spacing: 30 do
         vertical align: :center, padding_top: 30, padding: 0 do
@@ -28,7 +28,7 @@ module RubyArmor
 
               # Can be disabled because of a bug in RubyWarrior paths.
               button title, width: 400, tip: tip, enabled: File.directory?(profile.tower_path),
-                            icon: warrior_sprites[0, Play::WARRIORS[config.warrior_class]], icon_options: { factor: 2 } do
+                            icon: warrior_sprites[0, DungeonView::WARRIORS[config.warrior_class]], icon_options: { factor: 2 } do
                 play profile, config
               end
             end

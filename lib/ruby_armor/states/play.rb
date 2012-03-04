@@ -1,11 +1,5 @@
 module RubyArmor
   class Play < Fidgit::GuiState
-    FLOOR_COLOR = Color.rgba(255, 255, 255, 125)
-
-    TILE_WIDTH, TILE_HEIGHT = 8, 12
-    SPRITE_WIDTH, SPRITE_HEIGHT = 8, 8
-    SPRITE_SCALE = 5
-
     MAX_TURN_DELAY = 1
     MIN_TURN_DELAY = 0
     TURN_DELAY_STEP = 0.1
@@ -16,21 +10,7 @@ module RubyArmor
 
     FILE_SYNC_DELAY = 0.5 # 2 polls per second.
 
-    # Sprites to show based on player facing.
-    FACINGS = {
-        :east => 0,
-        :south => 1,
-        :west => 2,
-        :north => 3,
-    }
 
-    # Rows in the warriors.png to use for each warrior type.
-    WARRIORS = {
-        :valkyrie => 0,
-        :mercenary => 1,
-        :monk => 2,
-        :burglar => 3,
-    }
 
     ENEMY_TYPES = [
         RubyWarrior::Units::Wizard,
@@ -53,6 +33,7 @@ module RubyArmor
       @turn = turn
       @take_next_turn_at = Time.now + @config.turn_delay
       @log_contents["current turn"].text = replace_log @turn_logs[turn]
+      @dungeon_view.turn = turn
 
       turn
     end
@@ -67,9 +48,6 @@ module RubyArmor
 
       RubyWarrior::UI.proxy = self
 
-      @tiles = SpriteSheet.new "tiles.png", TILE_WIDTH, TILE_HEIGHT, 8
-      @warrior_sprites = SpriteSheet.new "warriors.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
-      @mob_sprites = SpriteSheet.new "mobs.png", SPRITE_WIDTH, SPRITE_HEIGHT, 4
 
       on_input(:escape) { pop_game_state }
 
@@ -85,11 +63,11 @@ module RubyArmor
       end
 
       vertical spacing: 10, padding: 10 do
-        horizontal padding: 0, height: 260, width: 780, spacing: 10 do
+        horizontal padding: 0, height: 260, width: 780, spacing: 10 do |packer|
           # Space for the game graphics.
-          @game_window = vertical padding: 0, width: 670, height: 260
+          @dungeon_view = DungeonView.new packer, @config.warrior_class
 
-          create_ui_bar
+          create_ui_bar packer
         end
 
         @turn_slider = slider width: 774, range: 0..MAX_TURNS, value: 0, enabled: false, tip: "Turn" do |_, turn|
@@ -122,8 +100,8 @@ module RubyArmor
       prepare_level
     end
 
-    def create_ui_bar
-      vertical padding: 0, height: 260, width: 100, spacing: 6 do
+    def create_ui_bar(packer)
+      vertical parent: packer, padding: 0, height: 260, width: 100, spacing: 6 do
         # Labels at top-right.
         @tower_label = label "", tip: "Each tower has a different difficulty level"
         @level_label = label "Level:"
@@ -347,9 +325,10 @@ module RubyArmor
       @playing = false
       level.load_level
 
+      @dungeon_view.floor = floor
+
       # List of log entries, unit drawings and health made in each turn.
       @turn_logs = Hash.new {|h, k| h[k] = "" }
-      @units_record = Array.new
       @health = [level.warrior.health]
 
       @review_button.enabled = ReviewCode.saved_levels? profile # Can't review code unless some has been saved.
@@ -363,22 +342,13 @@ module RubyArmor
       self.print "#{profile.warrior_name} climbs up to level #{level.number}\n"
       @log_contents["full log"].text += @log_contents["current turn"].text
 
-      @tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
-
-      warrior = floor.units.find {|u| u.is_a? RubyWarrior::Units::Warrior }
-      @entry_x, @entry_y = warrior.position.x, warrior.position.y
+      @dungeon_view.tile_set = %w[beginner intermediate].index(profile.tower.name) || 2 # We don't know what the last tower will be called.
 
       # Reset the time-line slider.
       @turn_slider.enabled = false
       @turn_slider.value = 0
 
       refresh_labels
-
-      # Work out how to offset the level graphics based on how large it is (should be centered in the level area.
-      level_width = floor.width * SPRITE_SCALE * SPRITE_WIDTH
-      level_height = floor.height * SPRITE_SCALE * SPRITE_HEIGHT
-      @level_offset_x = (@game_window.width - level_width) / 2
-      @level_offset_y =  (@game_window.height - level_height) / 2
 
       # Load the player's own code, which might explode!
       begin
@@ -617,107 +587,10 @@ END
 
     def draw
       super
-
-      $window.translate @level_offset_x, @level_offset_y do
-        $window.scale SPRITE_SCALE do
-          draw_map
-
-          # Draw stairs (exit)
-          if floor.stairs_location[0] == 0
-            # flip when on the left hand side.
-            @tiles[2, @tile_set].draw (floor.stairs_location[0] + 1) * SPRITE_WIDTH, floor.stairs_location[1] * SPRITE_HEIGHT, 0, -1
-          else
-            @tiles[2, @tile_set].draw floor.stairs_location[0] * SPRITE_WIDTH, floor.stairs_location[1] * SPRITE_HEIGHT, 0
-          end
-
-          # Draw trapdoor (entrance)
-          @tiles[6, @tile_set].draw @entry_x * SPRITE_WIDTH, @entry_y * SPRITE_HEIGHT, 0
-
-          draw_units
-        end
-      end
     end
-
-    def draw_map
-      # Draw horizontal walls.
-      floor.width.times do |x|
-        light = x % 2
-        light = 2 if light == 1 and (Gosu::milliseconds / 500) % 2 == 0
-        @tiles[light + 3, @tile_set].draw x * SPRITE_WIDTH, -SPRITE_HEIGHT, 0
-        @tiles[3, @tile_set].draw x * SPRITE_WIDTH, floor.height * SPRITE_HEIGHT, floor.height
-      end
-      # Draw vertical walls.
-      (-1..floor.height).each do |y|
-        @tiles[3, @tile_set].draw -SPRITE_WIDTH, y * SPRITE_HEIGHT, y
-        @tiles[3, @tile_set].draw floor.width * SPRITE_WIDTH, y * SPRITE_HEIGHT, y
-      end
-
-      # Draw floor
-      floor.width.times do |x|
-        floor.height.times do |y|
-          @tiles[(x + y + 1) % 2, @tile_set].draw x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 1, 1, FLOOR_COLOR
-        end
-      end
-    end
-
-    def draw_units
-      @units_record[effective_turn] ||= $window.record 1, 1 do
-        floor.units.sort_by {|u| u.position.y }.each do |unit|
-          sprite = case unit
-                     when RubyWarrior::Units::Warrior
-                       @warrior_sprites[FACINGS[unit.position.direction], WARRIORS[@config.warrior_class]]
-                     when RubyWarrior::Units::Wizard
-                       @mob_sprites[0, 1]
-                     when RubyWarrior::Units::ThickSludge
-                       @mob_sprites[2, 1]
-                     when RubyWarrior::Units::Sludge
-                       @mob_sprites[1, 1]
-                     when RubyWarrior::Units::Archer
-                       @mob_sprites[3, 1]
-                     when RubyWarrior::Units::Captive
-                       @mob_sprites[0, 2]
-                     when RubyWarrior::Units::Golem
-                       @mob_sprites[1, 2]
-                     else
-                       raise "unknown unit: #{unit.class}"
-                   end
-
-          # Draw unit itself
-          x, y, z_order = unit.position.x * SPRITE_WIDTH, unit.position.y * SPRITE_HEIGHT, unit.position.y
-          sprite.draw x, y, z_order
-
-          # Draw health number
-          $window.scale 0.25 do
-            Font[12].draw unit.health, x * 4, y * 4 - 20, z_order
-          end
-
-          # Draw health-bar (black border, with red bar).
-          draw_rect x, y - 2, SPRITE_WIDTH, 1, z_order, Color::BLACK
-          draw_rect x + HEALTH_BAR_BORDER, y + HEALTH_BAR_BORDER - 2,
-                    (SPRITE_WIDTH - 1) * unit.health / unit.max_health + HEALTH_BAR_BORDER * 2, 1 - HEALTH_BAR_BORDER * 2,
-                    z_order, Color::RED
-
-          # Draw binding rope if if it tied up.
-          if unit.bound?
-            @mob_sprites[2, 2].draw x, y, z_order
-          end
-        end
-      end
-
-      @units_record[effective_turn].draw 0, 0, 0
-    end
-
-    HEALTH_BAR_BORDER = 0.25
 
     def unit_health_changed(unit, amount)
-      return unless @level_offset_x # Ignore changes out of order, such as between epic levels.
-
-      color = (amount > 0) ? Color::GREEN : Color::RED
-      y_offset = (amount > 0) ? -0.15 : +0.15
-      FloatingText.create "#{amount > 0 ? "+" : ""}#{amount}",
-                          :color => color,
-                          :x => unit.position.x * SPRITE_SCALE * SPRITE_WIDTH  + (SPRITE_SCALE * SPRITE_WIDTH / 2) + @level_offset_x,
-                          :y => (unit.position.y + y_offset) * SPRITE_SCALE * SPRITE_HEIGHT + @level_offset_y
+      @dungeon_view.unit_health_changed unit, amount
     end
 
     def update

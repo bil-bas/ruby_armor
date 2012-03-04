@@ -25,6 +25,7 @@ require "ruby_armor/states/create_profile"
 require "ruby_armor/states/choose_profile"
 require "ruby_armor/states/play"
 require "ruby_armor/states/review_code"
+require "ruby_armor/dungeon_view"
 require "ruby_armor/window"
 require "ruby_armor/warrior_config"
 
