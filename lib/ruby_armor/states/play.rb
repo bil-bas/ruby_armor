@@ -74,12 +74,12 @@ module RubyArmor
       on_input(:escape) { pop_game_state }
 
       on_input(:right_arrow) do
-        if @turn_slider.enabled? and @turn_slider.value < turn
+        if !focus and @turn_slider.enabled? and @turn_slider.value < turn
           @turn_slider.value += 1
         end
       end
       on_input(:left_arrow) do
-        if @turn_slider.enabled? and @turn_slider.value > 0
+        if !focus and @turn_slider.enabled? and @turn_slider.value > 0
           @turn_slider.value -= 1
         end
       end
