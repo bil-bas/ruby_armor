@@ -24,7 +24,7 @@ module RubyArmor
         # Choose class; just cosmetic.
         @warrior_class = group align_h: :center do
           horizontal padding: 0, align_h: :center do
-            Play::WARRIORS.each do |warrior, row|
+            DungeonView::WARRIORS.each do |warrior, row|
               radio_button "", warrior, tip: "Play as a #{warrior.capitalize} (The difference between classes is purely cosmetic!)",
                            :icon => warrior_sprites[0, row], :icon_options => { :factor => 4 }
             end
